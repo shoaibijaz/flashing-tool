@@ -5,7 +5,11 @@ import { default as EndpointDialog } from './EndpointDialog';
 import { default as AddSegmentDialog } from './AddSegmentDialog';
 import { useDialogStore } from '../../store/dialogStore';
 
-const CanvasDialogs: React.FC = () => {
+interface CanvasDialogsProps {
+  onOriginalLinesChanged?: (newLines: import('../../types').Line[]) => void;
+}
+
+const CanvasDialogs: React.FC<CanvasDialogsProps> = ({ onOriginalLinesChanged }) => {
   const dialog = useDialogStore();
   if (!dialog.open || !dialog.anchor) return null;
 
@@ -22,6 +26,7 @@ const CanvasDialogs: React.FC = () => {
             anchor={dialog.anchor}
             end={dialog.end as 'start' | 'end'}
             lineIdx={dialog.lineIdx as number}
+            onOriginalLinesChanged={onOriginalLinesChanged}
           />
         );
       }
@@ -39,9 +44,7 @@ const CanvasDialogs: React.FC = () => {
           <FoldDialog
             open={dialog.open}
             end={dialog.end as 'start' | 'end' | null}
-            lineIdx={dialog.lineIdx as number}
             onClose={dialog.closeDialog}
-            onOk={() => {}}
           />
         );
       }

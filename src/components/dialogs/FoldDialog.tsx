@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import type { FoldEndpointInfo as StoreFoldEndpointInfo, Point } from '../../types';
+// No longer need StoreFoldEndpointInfo
 import { Button } from "../ui/button";
 import { Check, X, Shuffle } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select";
 import { useDrawingStore } from '../../store/drawingStore';
-import { GetNewPositionByAngleLength } from '../../utils/geometryUtils';
+
 
 interface Fold {
   Id: string;
@@ -29,41 +29,24 @@ interface Fold {
 interface FoldDialogProps {
   open: boolean;
   end: 'start' | 'end' | null;
-  lineIdx: number;
   onClose: () => void;
-  onOk: (fold: Fold, segmentEdits: { [segIdx: number]: { Length: number; Angle: number } }) => void;
 }
 
-const FoldDialog: React.FC<FoldDialogProps> = ({ open, end, lineIdx, onClose, onOk }) => {
-  // Add DrawingLine type for correct typing
-  interface FoldEndpointInfo {
-    selectedId: string;
-    segmentEdits: { [segIdx: number]: { Length: number; Angle: number } };
-    direction?: string;
-  }
-  interface DrawingLine {
-    points: { x: number; y: number }[];
-    startFold?: FoldEndpointInfo;
-    endFold?: FoldEndpointInfo;
-    // ...other properties as needed
-  }
-  const lines = useDrawingStore((s: { lines: DrawingLine[] }) => s.lines);
-  const setLineEndpointFold = useDrawingStore((s: { setLineEndpointFold: (lineIdx: number, endpointKey: 'startFold' | 'endFold', foldInfo: StoreFoldEndpointInfo | undefined) => void }) => s.setLineEndpointFold);
-  const removeLineEndpointFold = useDrawingStore((s: { removeLineEndpointFold: (lineIdx: number, endpointKey: 'startFold' | 'endFold') => void }) => s.removeLineEndpointFold);
-  const setFirstEndpoint = useDrawingStore((s: { setFirstEndpoint: (pts: Point[], idx: number, highlight?: boolean) => void }) => s.setFirstEndpoint);
-  const setLastEndpoint = useDrawingStore((s: { setLastEndpoint: (pts: Point[], idx: number, highlight?: boolean) => void }) => s.setLastEndpoint);
+const FoldDialog: React.FC<FoldDialogProps> = ({ open, end, onClose }) => {
+  // No longer need DrawingLine or FoldEndpointInfo interfaces
+  const firstEndpoint = useDrawingStore(s => s.firstEndpoint);
+  const lastEndpoint = useDrawingStore(s => s.lastEndpoint);
+  const setFirstEndpoint = useDrawingStore(s => s.setFirstEndpoint);
+  const setLastEndpoint = useDrawingStore(s => s.setLastEndpoint);
+  const removeFirstEndpoint = useDrawingStore(s => s.removeFirstEndpoint);
+  const removeLastEndpoint = useDrawingStore(s => s.removeLastEndpoint);
   // Use dialogStore only for lineIdx
   const [folds, setFolds] = useState<Fold[]>([]);
-  // Store fold info for endpoints in drawingStore, not localStorage
-  // lineIdx is now passed as a prop
-  const endpointKey = end === 'end' ? 'endFold' : 'startFold';
-  // Remove type assertion to missing type
-  const endpointFoldInfo = (typeof lineIdx === 'number' && lines[lineIdx] && lines[lineIdx][endpointKey]) || undefined;
-  const [selectedId, setSelectedId] = useState<string>(endpointFoldInfo?.selectedId || 'NO_FOLD');
-  const [segmentEdits, setSegmentEdits] = useState<{ [segIdx: number]: { Length: number; Angle: number } }>(endpointFoldInfo?.segmentEdits || {});
-  const foldInfo = endpointFoldInfo || undefined;
-  // Only use direction value, not setter
-  const direction: string = foldInfo?.direction ?? '';
+  // Use global endpoint state for fold info
+  const endpointInfo = end === 'start' ? firstEndpoint : end === 'end' ? lastEndpoint : null;
+  const [selectedId, setSelectedId] = useState<string>(endpointInfo?.selectedId || 'NO_FOLD');
+  const [segmentEdits, setSegmentEdits] = useState<{ [segIdx: number]: { Length: number; Angle: number } }>(endpointInfo?.segmentEdits || {});
+  const direction: string = endpointInfo?.direction ?? '';
   // Selected fold for rendering and logic
   const selectedFold = selectedId === 'NO_FOLD' ? null : folds.find(f => f.Id === selectedId);
 
@@ -92,93 +75,21 @@ const FoldDialog: React.FC<FoldDialogProps> = ({ open, end, lineIdx, onClose, on
         setSegmentEdits(edits);
       }
     }
-  }, [selectedId, folds, direction, endpointKey, lineIdx, lines]);
+  }, [selectedId, folds, direction]);
 
-  const emptyFold: Fold = {
-    Id: '',
-    Name: '',
-    Label: '',
-    FoldsCount: 0,
-    SortOrder: 0,
-    IsActive: false,
-    Segments: []
-  };
+
 
   const handleOk = () => {
-    const selectedFold = selectedId === 'NO_FOLD' ? null : folds.find(f => f.Id === selectedId);
-    if (typeof lineIdx !== 'number' || !lines[lineIdx]) return;
-    // If No Fold is selected, remove fold info and clear endpoint
     if (selectedId === 'NO_FOLD') {
-      // remove persistent metadata and clear visible endpoint
-      removeLineEndpointFold(lineIdx, endpointKey as 'startFold' | 'endFold');
-      if (end === 'start') {
-        setFirstEndpoint([lines[lineIdx].points[0]], 0, false);
-      } else {
-        setLastEndpoint([lines[lineIdx].points[lines[lineIdx].points.length - 1]], lines[lineIdx].points.length - 1, false);
-      }
-      onOk(emptyFold, {});
-      // Close dialog after applying
+      if (end === 'start') removeFirstEndpoint();
+      if (end === 'end') removeLastEndpoint();
       onClose();
       return;
     }
-    const line = lines[lineIdx];
-    let startPt;
-    let pts;
-    const segCount = Object.keys(segmentEdits).length;
-    if (end === 'start') {
-      // For first endpoint fold, use direction from B to A for first segment
-      const A = line.points[0];
-      const B = line.points[1];
-      startPt = A;
-      pts = [A];
-      for (let i = 0; i < segCount; i++) {
-        const { Length, Angle } = segmentEdits[i];
-        let newPt;
-        if (i === 0) {
-          // First segment: use B → A
-          newPt = GetNewPositionByAngleLength(B.x, B.y, A.x, A.y, Length, Angle);
-        } else {
-          // Subsequent segments: use previous fold segment
-          const prev = pts[pts.length - 2] || pts[0];
-          const curr = pts[pts.length - 1];
-          newPt = GetNewPositionByAngleLength(prev.x, prev.y, curr.x, curr.y, Length, Angle);
-        }
-        pts.push(newPt);
-      }
-    } else {
-      // For last endpoint fold, use previous logic
-      startPt = line.points[line.points.length - 1];
-      pts = [startPt];
-      for (let i = 0; i < segCount; i++) {
-        const { Length, Angle } = segmentEdits[i];
-        const prevIdx = pts.length - 2;
-        const p0 = pts[prevIdx] || pts[0];
-        const p1 = pts[pts.length - 1];
-        const newPt = GetNewPositionByAngleLength(
-          p0.x, p0.y,
-          p1.x, p1.y,
-          Length,
-          Angle
-        );
-        pts.push(newPt);
-      }
-    }
-    // Debug: log all points
-    console.log('Fold endpoint points:', pts);
-    // Persist selection and edits in store via setter
-    setLineEndpointFold(lineIdx, endpointKey as 'startFold' | 'endFold', {
-      selectedId,
-      segmentEdits,
-      direction
-    });
-    // Set endpoint points and highlight the recomputed fold
-    if (end === 'start') {
-      setFirstEndpoint(pts, 0, true);
-    } else {
-      setLastEndpoint(pts, line.points.length - 1, true);
-    }
-    onOk(selectedFold || emptyFold, segmentEdits);
-    // Close dialog after applying fold
+    const info = { selectedId, segmentEdits, direction };
+    console.log('FoldDialog handleOk:', info, end);
+    if (end === 'start') setFirstEndpoint(info);
+    if (end === 'end') setLastEndpoint(info);
     onClose();
   };
 
@@ -307,3 +218,6 @@ const FoldDialog: React.FC<FoldDialogProps> = ({ open, end, lineIdx, onClose, on
 };
 
 export default FoldDialog;
+
+// Live preview recompute effect injected below component definition
+// (Keep outside default export modifications above)

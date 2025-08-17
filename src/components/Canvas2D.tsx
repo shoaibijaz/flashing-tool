@@ -11,19 +11,19 @@ import PolylineLayer from './PolylineLayer';
 interface Canvas2DProps {
   width: number;
   height: number;
-  mode: 'polyline';
   lines: Line[];
   linesState: Line[];
   setLinesState?: (lines: Line[]) => void;
   polyPoints: Point[];
   hoverPoint: Point | null;
-  // drawing: boolean; // removed, not used
   onStageClickPoly: (e: KonvaEventObject<MouseEvent>) => void;
   onStageMouseMovePoly: (e: KonvaEventObject<MouseEvent>) => void;
   onStageMouseLeavePoly: () => void;
   onPointDragMove: (idx: number, e: KonvaEventObject<DragEvent>) => void;
   onFinishedLinePointDrag: (lineIdx: number, ptIdx: number, e: KonvaEventObject<DragEvent>) => void;
   onContextMenuPoly: (e: KonvaEventObject<MouseEvent>) => void;
+  activeDiagram: 'original' | 'tapered';
+  onOriginalLinesChanged?: (newLines: Line[]) => void;
 }
 
 // --- Canvas2D main component ---
@@ -32,7 +32,6 @@ const Canvas2D: React.FC<Canvas2DProps> = (props) => {
   const {
     width,
     height,
-    mode,
     linesState,
     polyPoints,
     hoverPoint,
@@ -43,6 +42,7 @@ const Canvas2D: React.FC<Canvas2DProps> = (props) => {
     onFinishedLinePointDrag,
     onContextMenuPoly,
   } = props;
+
 
   // --- Zoom state ---
   const [zoom, setZoom] = useState(1);
@@ -121,7 +121,7 @@ const Canvas2D: React.FC<Canvas2DProps> = (props) => {
           <Layer>
             <PolylineLayer
               linesState={linesState}
-              mode={mode}
+              activeDiagram={props.activeDiagram}
               setLabelOffsets={setLabelOffsets}
               setAngleLabelOffsets={setAngleLabelOffsets}
               labelOffsets={labelOffsets}
@@ -138,7 +138,7 @@ const Canvas2D: React.FC<Canvas2DProps> = (props) => {
           </Layer>
         </Stage>
       </div>
-      <CanvasDialogs />
+  <CanvasDialogs onOriginalLinesChanged={props.onOriginalLinesChanged} />
     </div>
   );
 };

@@ -10,11 +10,10 @@ import AngleLabels from './AngleLabels';
 import { resolveCollisions } from '../utils/labelCollision';
 import type { LabelDescriptor } from '../utils/labelCollision';
 import { getSegmentLength } from '../utils/geometryUtils';
-import { useDrawingStore } from '../store/drawingStore';
 
 export interface PolylineLayerProps {
   linesState: Line[];
-  mode: 'polyline';
+  activeDiagram: 'original' | 'tapered';
   setLabelOffsets: React.Dispatch<React.SetStateAction<Record<string, { dx: number; dy: number }>>>;
   setAngleLabelOffsets: React.Dispatch<React.SetStateAction<Record<string, { dx: number; dy: number }>>>;
   labelOffsets: Record<string, { dx: number; dy: number }>;
@@ -22,12 +21,23 @@ export interface PolylineLayerProps {
   getLabelKey: (lineIdx: number, segIdx: number) => string;
   getAngleLabelKey: (lineIdx: number, vertexIdx: number) => string;
   onFinishedLinePointDrag: (lineIdx: number, ptIdx: number, e: KonvaEventObject<DragEvent>) => void;
-}
+  }
 
 import { useDialogStore } from '../store/dialogStore';
-const PolylineLayer: React.FC<PolylineLayerProps> = ({ linesState, mode, setLabelOffsets, setAngleLabelOffsets, labelOffsets, angleLabelOffsets, getLabelKey, getAngleLabelKey, onFinishedLinePointDrag }) => {
-  const firstEndpoint = useDrawingStore(s => s.firstEndpoint);
-  const lastEndpoint = useDrawingStore(s => s.lastEndpoint);
+import EndFoldLabel from './EndFoldLabel';
+const PolylineLayer: React.FC<PolylineLayerProps> = ({
+  linesState,
+  activeDiagram,
+  setLabelOffsets,
+  setAngleLabelOffsets,
+  labelOffsets,
+  angleLabelOffsets,
+  getLabelKey,
+  getAngleLabelKey,
+  onFinishedLinePointDrag,
+  // diagramOffset removed
+}) => {
+  // Endpoint state now handled by EndFoldLabel only
 
   // Precompute resolved offsets per line by combining segment and angle descriptors
   const resolvedOffsetsPerLine = React.useMemo(() => {
@@ -102,7 +112,10 @@ const PolylineLayer: React.FC<PolylineLayerProps> = ({ linesState, mode, setLabe
         line.points.length > 1 && (
           <React.Fragment key={line.id}>
             <KonvaLine
-              points={line.points.flatMap((p) => [p.x, p.y])}
+              points={line.points.flatMap((p) => [
+                p.x || 0,
+                p.y || 0
+              ])}
               stroke={line.color}
               strokeWidth={3}
               lineCap="round"
@@ -113,8 +126,9 @@ const PolylineLayer: React.FC<PolylineLayerProps> = ({ linesState, mode, setLabe
                 key={`add-segment-handle-circle-${idx}`}
                 x={line.points[idx].x}
                 y={line.points[idx].y}
-                draggable={mode === 'polyline'}
+                draggable={activeDiagram === 'original'}
                 onClick={(e) => {
+                  if (activeDiagram !== 'original') return;
                   e.evt?.stopPropagation?.();
                   e.cancelBubble = true;
                   useDialogStore.getState().openDialog('endpoint', {
@@ -125,13 +139,13 @@ const PolylineLayer: React.FC<PolylineLayerProps> = ({ linesState, mode, setLabe
                     lineIdx,
                   });
                 }}
-                onDragMove={(e: KonvaEventObject<DragEvent>) => {
+                onDragMove={activeDiagram === 'original' ? (e: KonvaEventObject<DragEvent>) => {
                   onFinishedLinePointDrag(lineIdx, idx, e);
-                }}
+                } : undefined}
                 onMouseEnter={(e: KonvaEventObject<MouseEvent>) => {
                   const stage = e.target.getStage();
                   if (stage && stage.container()) {
-                    stage.container().style.cursor = 'pointer';
+                    stage.container().style.cursor = activeDiagram === 'original' ? 'pointer' : 'default';
                   }
                 }}
                 onMouseLeave={(e: KonvaEventObject<MouseEvent>) => {
@@ -157,42 +171,21 @@ const PolylineLayer: React.FC<PolylineLayerProps> = ({ linesState, mode, setLabe
               setAngleLabelOffsets={setAngleLabelOffsets}
               getAngleLabelKey={getAngleLabelKey}
               resolvedOffsets={resolvedOffsetsPerLine[lineIdx]}
+              activeDiagram={activeDiagram}
             />
-            {line.points.length > 1 && (
+            {line.points.length > 1 && activeDiagram === 'original' && (
               <PolylineHandles
-                points={line.points.slice(1, -1)}
+                  points={line.points.slice(1, -1)}
                 onDragMove={(ptIdx, e) => onFinishedLinePointDrag(lineIdx, ptIdx + 1, e)}
-                draggable={mode === 'polyline'}
+                draggable={true}
               />
             )}
           </React.Fragment>
         )
       ))}
-      {/* Render endpoint folds visually connected to main diagram */}
-      {firstEndpoint && firstEndpoint.points.length > 1 && (
-        <KonvaLine
-          points={firstEndpoint.points.flatMap((p) => [p.x, p.y])}
-          stroke={firstEndpoint.highlight ? '#059669' : '#16a34a'}
-          strokeWidth={firstEndpoint.highlight ? 4 : 2}
-          dash={[8, 6]}
-          lineCap="round"
-          lineJoin="round"
-          shadowColor={firstEndpoint.highlight ? '#059669' : undefined}
-          shadowBlur={firstEndpoint.highlight ? 12 : 0}
-        />
-      )}
-      {lastEndpoint && lastEndpoint.points.length > 1 && (
-        <KonvaLine
-          points={lastEndpoint.points.flatMap((p) => [p.x, p.y])}
-          stroke={lastEndpoint.highlight ? '#ca8a04' : '#eab308'}
-          strokeWidth={lastEndpoint.highlight ? 4 : 2}
-          dash={[8, 6]}
-          lineCap="round"
-          lineJoin="round"
-          shadowColor={lastEndpoint.highlight ? '#ca8a04' : undefined}
-          shadowBlur={lastEndpoint.highlight ? 12 : 0}
-        />
-      )}
+      {/* Add EndFoldLabel for both endpoints */}
+      <EndFoldLabel which="first" />
+      <EndFoldLabel which="last" />
     </>
   );
 };

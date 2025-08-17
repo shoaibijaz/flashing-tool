@@ -1,23 +1,45 @@
 import { useState, useEffect, useRef } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useDrawingStore } from './store/drawingStore';
-import { GetNewPositionByAngleLength } from './utils/geometryUtils';
+
 import Canvas2D from './components/Canvas2D';
 import AppLayout from './components/AppLayout';
 import './App.css';
 
+
+import type { Line } from './types';
+
+function deepCopyLines(lines: Line[]): Line[] {
+  return lines.map(line => ({
+    ...line,
+    points: line.points.map(pt => ({ ...pt })),
+    startFold: line.startFold ? { 
+      ...line.startFold, 
+      segmentEdits: { ...line.startFold.segmentEdits } 
+    } : undefined,
+    endFold: line.endFold ? { 
+      ...line.endFold, 
+      segmentEdits: { ...line.endFold.segmentEdits } 
+    } : undefined,
+  }));
+}
+
 function App() {
-  // Zustand store hooks and state
-  const lines = useDrawingStore((s) => s.lines);
+  // Zustand store hooks and state (for original only)
+  const linesStore = useDrawingStore((s) => s.lines);
   const addLine = useDrawingStore((s) => s.addLine);
   const clear = useDrawingStore((s) => s.clear);
   const setLines = useDrawingStore((s) => s.setLines);
   const redo = useDrawingStore((s) => s.redo);
-  const setFirstEndpoint = useDrawingStore((s) => s.setFirstEndpoint);
-  const setLastEndpoint = useDrawingStore((s) => s.setLastEndpoint);
+
+  // Diagrams state
+  const [originalLines, setOriginalLines] = useState<Line[]>([]);
+  const [taperedLines, setTaperedLines] = useState<Line[] | null>(null);
+  const [activeDiagram, setActiveDiagram] = useState<'original' | 'tapered'>('original');
+  const [isTaperedCreated, setIsTaperedCreated] = useState(false);
 
   // Local UI state
-  const mode = 'polyline';
+  // const mode = 'polyline'; // unused
   const [polyPoints, setPolyPoints] = useState<{ x: number; y: number }[]>([]);
   const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number } | null>(null);
   const [activeTool, setActiveTool] = useState<string>('shapes');
@@ -26,8 +48,6 @@ function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
-
-  // Remove linesState, always use global lines
 
   // Responsive canvas width and height using ResizeObserver
   useEffect(() => {
@@ -45,6 +65,27 @@ function App() {
     return () => resizeObserver.disconnect();
   }, []);
 
+  // Keep originalLines in sync with store lines ONLY when on 'original' diagram
+  useEffect(() => {
+    if (activeDiagram === 'original') {
+      setOriginalLines(linesStore);
+    }
+  }, [linesStore, activeDiagram]);
+
+  // Only update the store when switching diagrams, not on every local state change
+  const prevDiagramRef = useRef(activeDiagram);
+  useEffect(() => {
+    if (prevDiagramRef.current !== activeDiagram) {
+      if (activeDiagram === 'original') {
+        setLines(originalLines);
+      } else if (activeDiagram === 'tapered' && taperedLines) {
+        setLines(taperedLines);
+      }
+      prevDiagramRef.current = activeDiagram;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDiagram]);
+
   // --- Polyline Mode ---
   function handlePointDragMove(idx: number, e: KonvaEventObject<DragEvent>) {
     const pos = e.target.getStage()?.getPointerPosition();
@@ -53,7 +94,7 @@ function App() {
   }
   function handleStageClickPoly(e: KonvaEventObject<MouseEvent>) {
     if (e.evt.button !== 0) return;
-    if (polyPoints.length === 0 && lines.length > 0) return;
+    if (polyPoints.length === 0 && linesStore.length > 0) return;
     const pointer = e.target.getStage()?.getPointerPosition();
     if (!pointer) return;
     setPolyPoints((pts) => [...pts, pointer]);
@@ -82,81 +123,85 @@ function App() {
   function handleFinishedLinePointDrag(lineIdx: number, ptIdx: number, e: KonvaEventObject<DragEvent>) {
     const pos = e.target.getStage()?.getPointerPosition();
     if (!pos) return;
-    if (lines.length === 0) {
+  const currentLines = activeDiagram === 'original' ? originalLines : taperedLines || [];
+    if (currentLines.length === 0) {
       setLines([]);
       return;
     }
-    // Build new lines array so we can compute folds after updating coordinates
-    const newLines = lines.map((line, i) =>
-      i === lineIdx
-        ? { ...line, points: line.points.map((pt, j) => (j === ptIdx ? pos : pt)) }
-        : line
-    );
-    setLines(newLines);
 
-    // If moved first/second point and a startFold is present, recompute its fold points
-    try {
-      const line = newLines[lineIdx];
-      const lastIndex = line.points.length - 1;
-
-      if ((ptIdx === 0 || ptIdx === 1) && line.startFold) {
-        const A = line.points[0];
-        const B = line.points[1];
-        const segEdits = line.startFold.segmentEdits || {};
-        const segCount = Object.keys(segEdits).length;
-        const pts = [A];
-        for (let i = 0; i < segCount; i++) {
-          const { Length, Angle } = segEdits[i];
-          let newPt;
-          if (i === 0) {
-            // First segment: use B -> A
-            newPt = GetNewPositionByAngleLength(B.x, B.y, A.x, A.y, Length, Angle);
-          } else {
-            const prev = pts[pts.length - 2] || pts[0];
-            const curr = pts[pts.length - 1];
-            newPt = GetNewPositionByAngleLength(prev.x, prev.y, curr.x, curr.y, Length, Angle);
-          }
-          pts.push(newPt);
-        }
-        // highlight recomputed fold then clear highlight after short delay
-        setFirstEndpoint(pts, 0, true);
-        setTimeout(() => setFirstEndpoint(pts, 0, false), 1200);
+    let newLines;
+    if (activeDiagram === 'tapered' && originalLines[lineIdx]) {
+      // Constrain movement to original angle for tapered
+      const origLine = originalLines[lineIdx];
+      const taperedLine = currentLines[lineIdx];
+      // Only allow for interior points (not endpoints)
+      // Endpoints: ptIdx === 0 (first) or ptIdx === last (last)
+      const lastIdx = taperedLine.points.length - 1;
+      if (ptIdx === 0 || ptIdx === lastIdx) {
+        // Prevent dragging endpoints in tapered mode
+        newLines = currentLines;
+      } else {
+        // For all interior points, constrain drag to original angle from previous point
+        const prev = taperedLine.points[ptIdx - 1];
+        const origPrev = origLine.points[ptIdx - 1];
+        const origPt = origLine.points[ptIdx];
+        // Calculate original angle
+        const angle = Math.atan2(origPt.y - origPrev.y, origPt.x - origPrev.x);
+        // Project mouse pos onto this angle from prev point
+        const dx = pos.x - prev.x;
+        const dy = pos.y - prev.y;
+        const len = dx * Math.cos(angle) + dy * Math.sin(angle);
+        const newX = prev.x + len * Math.cos(angle);
+        const newY = prev.y + len * Math.sin(angle);
+        newLines = currentLines.map((line, i) =>
+          i === lineIdx
+            ? { ...line, points: line.points.map((pt, j) => (j === ptIdx ? { x: newX, y: newY } : pt)) }
+            : line
+        );
       }
-
-      // If moved last or second-to-last point and an endFold is present, recompute its fold points
-      if ((ptIdx === lastIndex || ptIdx === lastIndex - 1) && line.endFold) {
-        const startPt = line.points[lastIndex];
-        const segEdits = line.endFold.segmentEdits || {};
-        const segCount = Object.keys(segEdits).length;
-        const pts = [startPt];
-        for (let i = 0; i < segCount; i++) {
-          const { Length, Angle } = segEdits[i];
-          const prevIdx = pts.length - 2;
-          const p0 = pts[prevIdx] || pts[0];
-          const p1 = pts[pts.length - 1];
-          const newPt = GetNewPositionByAngleLength(p0.x, p0.y, p1.x, p1.y, Length, Angle);
-          pts.push(newPt);
-        }
-        setLastEndpoint(pts, lastIndex, true);
-        setTimeout(() => setLastEndpoint(pts, lastIndex, false), 1200);
-      }
-    } catch (err) {
-      console.error('Error updating fold endpoints after point drag', err);
+    } else {
+      // Original: allow free drag
+      newLines = currentLines.map((line, i) =>
+        i === lineIdx
+          ? { ...line, points: line.points.map((pt, j) => (j === ptIdx ? pos : pt)) }
+          : line
+      );
     }
+    setLines(newLines);
+    if (activeDiagram === 'original') {
+      setOriginalLines(newLines);
+    } else {
+      setTaperedLines(newLines);
+    }
+
+  // No endfold recompute logic needed here
   }
-  // Remove handleFinishedLinePointDragEnd, not needed
 
   function handleUndo() {
     if (polyPoints.length > 0) {
       setPolyPoints((pts) => pts.slice(0, -1));
-    } else if (lines.length > 0) {
-      const lastLine = lines[lines.length - 1];
-      if (lastLine.points.length > 1) {
-        const newLines = lines.slice(0, -1).concat({ ...lastLine, points: lastLine.points.slice(0, -1) });
-        setLines(newLines);
-      } else {
-        setLines([]);
+    } else {
+      // Undo for active diagram
+      if (activeDiagram === 'original' && originalLines.length > 0) {
+        setOriginalLines(originalLines.slice(0, -1));
+        setLines(originalLines.slice(0, -1));
+      } else if (activeDiagram === 'tapered' && taperedLines && taperedLines.length > 0) {
+        setTaperedLines(taperedLines.slice(0, -1));
+        setLines(taperedLines.slice(0, -1));
       }
+    }
+  }
+
+  // Tapered toggle logic
+  function handleToggleTapered() {
+    if (!isTaperedCreated && activeDiagram === 'original') {
+      // Create tapered as a copy of original
+      setTaperedLines(deepCopyLines(originalLines));
+      setIsTaperedCreated(true);
+      setActiveDiagram('tapered');
+      setLines(deepCopyLines(originalLines));
+    } else {
+      setActiveDiagram(activeDiagram === 'original' ? 'tapered' : 'original');
     }
   }
 
@@ -169,32 +214,35 @@ function App() {
       onClear={clear}
       onToolSelect={setActiveTool}
       activeTool={activeTool}
+      isDrawMode={polyPoints.length > 0}
+      onToggleTapered={handleToggleTapered}
+      isTaperedCreated={isTaperedCreated}
+      activeDiagram={activeDiagram}
+      hasOriginalDiagram={originalLines.length > 0 && polyPoints.length === 0}
     >
       <div ref={containerRef} className="w-full h-full flex-1 flex items-center justify-center bg-white dark:bg-gray-900">
         {canvasWidth > 0 && canvasHeight > 0 && (
-          <Canvas2D
-            width={canvasWidth}
-            height={canvasHeight}
-            mode={mode}
-            lines={lines}
-            linesState={lines}
-            setLinesState={setLines}
-            polyPoints={polyPoints}
-            hoverPoint={hoverPoint}
-            onStageClickPoly={handleStageClickPoly}
-            onStageMouseMovePoly={handleStageMouseMovePoly}
-            onStageMouseLeavePoly={handleStageMouseLeavePoly}
-            onPointDragMove={handlePointDragMove}
-            onFinishedLinePointDrag={handleFinishedLinePointDrag}
-            onContextMenuPoly={(e) => { e.evt.preventDefault(); finishPolyline(); }}
-          />
+            <Canvas2D
+              width={canvasWidth}
+              height={canvasHeight}
+              lines={activeDiagram === 'original' ? originalLines : taperedLines || []}
+              linesState={activeDiagram === 'original' ? originalLines : taperedLines || []}
+              setLinesState={activeDiagram === 'original' ? setOriginalLines : setTaperedLines}
+              polyPoints={polyPoints}
+              hoverPoint={hoverPoint}
+              onStageClickPoly={handleStageClickPoly}
+              onStageMouseMovePoly={handleStageMouseMovePoly}
+              onStageMouseLeavePoly={handleStageMouseLeavePoly}
+              onPointDragMove={handlePointDragMove}
+              onFinishedLinePointDrag={handleFinishedLinePointDrag}
+              onContextMenuPoly={(e) => { e.evt.preventDefault(); finishPolyline(); }}
+              activeDiagram={activeDiagram}
+              onOriginalLinesChanged={(newLines) => {
+                setOriginalLines(newLines);
+                if (taperedLines) setTaperedLines(deepCopyLines(newLines));
+              }}
+            />
         )}
-        {/* Debug panel: absolute, bottom right of viewport */}
-        <div className="bg-gray-200 fixed bottom-6 right-6 w-72 p-2 dark:bg-gray-900 rounded-xl text-xs text-gray-700 dark:text-gray-200 shadow-xl border border-gray-300 dark:border-gray-700" style={{fontFamily:'monospace',maxHeight:120,overflow:'auto',zIndex:50}}>
-          <div><b>lines:</b> {JSON.stringify(lines)}</div>
-          <div><b>polyPoints:</b> {JSON.stringify(polyPoints)}</div>
-          <div><b>hoverPoint:</b> {JSON.stringify(hoverPoint)}</div>
-        </div>
       </div>
     </AppLayout>
   );

@@ -12,9 +12,10 @@ export interface AddSegmentDialogProps {
   anchor: { x: number; y: number };
   end: 'start' | 'end';
   lineIdx: number;
+  onOriginalLinesChanged?: (newLines: Line[]) => void;
 }
 
-const AddSegmentDialog: React.FC<AddSegmentDialogProps> = ({ open, anchor, end, lineIdx }) => {
+const AddSegmentDialog: React.FC<AddSegmentDialogProps> = ({ open, anchor, end, lineIdx, onOriginalLinesChanged }) => {
   const { closeDialog } = useDialogStore();
   const [length, setLength] = React.useState<number>(50);
   const [angle, setAngle] = React.useState<number>(90);
@@ -32,6 +33,22 @@ const AddSegmentDialog: React.FC<AddSegmentDialogProps> = ({ open, anchor, end, 
       setAngle(!isNaN(num) ? num : 90);
     }
   };
+
+
+  function deepCopyLines(lines: Line[]): Line[] {
+    return lines.map(line => ({
+      ...line,
+      points: line.points.map(pt => ({ ...pt })),
+      startFold: line.startFold ? { 
+        ...line.startFold, 
+        segmentEdits: { ...line.startFold.segmentEdits } 
+      } : undefined,
+      endFold: line.endFold ? { 
+        ...line.endFold, 
+        segmentEdits: { ...line.endFold.segmentEdits } 
+      } : undefined,
+    }));
+  }
 
   function addSegmentToLine(
     lines: Line[],
@@ -79,6 +96,9 @@ const AddSegmentDialog: React.FC<AddSegmentDialogProps> = ({ open, anchor, end, 
       }
       line.points = points;
       setLines(updatedLines);
+      if (typeof onOriginalLinesChanged === 'function') {
+        onOriginalLinesChanged(deepCopyLines(updatedLines));
+      }
       closeDialog();
     }
   }

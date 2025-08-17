@@ -15,11 +15,13 @@ interface AngleLabelsProps {
   setAngleLabelOffsets: React.Dispatch<React.SetStateAction<Record<string, { dx: number; dy: number }>>>;
   getAngleLabelKey: (lineIdx: number, vertexIdx: number) => string;
   resolvedOffsets?: Record<string, { dx: number; dy: number }>;
+  activeDiagram?: 'original' | 'tapered';
 }
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
-const AngleLabels: React.FC<AngleLabelsProps> = ({ line, lineIdx, angleLabelOffsets, setAngleLabelOffsets, getAngleLabelKey, resolvedOffsets }) => {
+const AngleLabels: React.FC<AngleLabelsProps> = (props) => {
+  const { line, lineIdx, angleLabelOffsets, setAngleLabelOffsets, getAngleLabelKey, resolvedOffsets, activeDiagram } = props;
   const labels = [];
   for (let i = 2; i < line.points.length; i++) {
     const a = line.points[i - 2];
@@ -52,7 +54,7 @@ const AngleLabels: React.FC<AngleLabelsProps> = ({ line, lineIdx, angleLabelOffs
             [angleLabelKey]: { dx: clampedDx, dy: clampedDy },
           }));
         }}
-        onClick={e => {
+            onClick={activeDiagram === 'original' ? (e) => {
           e.cancelBubble = true;
           import('../store/dialogStore').then(({ useDialogStore }) => {
             useDialogStore.getState().openDialog('editAngle', {
@@ -63,8 +65,8 @@ const AngleLabels: React.FC<AngleLabelsProps> = ({ line, lineIdx, angleLabelOffs
               length: getSegmentLength(b, c).toFixed(1),
             });
           });
-        }}
-        onTap={e => {
+        } : undefined}
+  onTap={activeDiagram === 'original' ? e => {
           e.cancelBubble = true;
           import('../store/dialogStore').then(({ useDialogStore }) => {
             useDialogStore.getState().openDialog('editAngle', {
@@ -75,7 +77,7 @@ const AngleLabels: React.FC<AngleLabelsProps> = ({ line, lineIdx, angleLabelOffs
               length: getSegmentLength(b, c).toFixed(1),
             });
           });
-        }}
+        } : undefined}
       >
         <KonvaTag fill={LABEL_BG} cornerRadius={4} />
         <KonvaText text={angleLabel} fontSize={13} fill="#fff" fontStyle="bold" padding={3} />
