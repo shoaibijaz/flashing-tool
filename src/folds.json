@@ -1,0 +1,279 @@
+[
+    {
+        "Id": "64e876750e678c965e311229",
+        "Name": "Safety Fold",
+        "Label": "Gap Fold",
+        "FoldsCount": 1,
+        "SortOrder": 1,
+        "IsActive": true,
+        "ExtraEndFold": null,
+        "Segments": [
+            {
+                "Angle": 90,
+                "Length": 100,
+                "SortOrder": 0,
+                "IsSupported": true,
+                "IsLengthEditable": true,
+                "IsAngleEditable": true,
+                "MaxLength": 150,
+                "MinLength": 0
+            },
+            {
+                "Angle": 45,
+                "Length": 70,
+                "SortOrder": 0,
+                "IsSupported": true,
+                "IsLengthEditable": true,
+                "IsAngleEditable": true,
+                "MaxLength": 150,
+                "MinLength": 0
+            }
+        ],
+        "EndFoldSWIEdgeA": {
+            "SWIDefaultAngle": 3,
+            "SWIOppositeAngle": 4
+        },
+        "EndFoldSWIEdgeZ": {
+            "SWIDefaultAngle": 4,
+            "SWIOppositeAngle": 3
+        }
+    },
+    {
+        "Id": "64e876b10e678c965e311e9f",
+        "Name": "Crush",
+        "Label": "F&F",
+        "FoldsCount": 1,
+        "SortOrder": 2,
+        "IsActive": true,
+        "ExtraEndFold": null,
+        "Segments": [
+            {
+                "Angle": 90,
+                "Length": 2,
+                "SortOrder": 0,
+                "IsSupported": true,
+                "IsLengthEditable": false,
+                "IsAngleEditable": false,
+                "MaxLength": 150,
+                "MinLength": 0
+            },
+            {
+                "Angle": 90,
+                "Length": 10,
+                "SortOrder": 1,
+                "IsSupported": false,
+                "IsLengthEditable": true,
+                "IsAngleEditable": false,
+                "MaxLength": 150,
+                "MinLength": 0
+            }
+        ],
+        "EndFoldSWIEdgeA": {
+            "SWIDefaultAngle": 1,
+            "SWIOppositeAngle": 2
+        },
+        "EndFoldSWIEdgeZ": {
+            "SWIDefaultAngle": 2,
+            "SWIOppositeAngle": 1
+        }
+    },
+    {
+        "Id": "664af630775b3afed810bc5e",
+        "Name": "DemoEnd",
+        "Label": "Demo1",
+        "FoldsCount": 2,
+        "SortOrder": 3,
+        "IsActive": true,
+        "ExtraEndFold": {
+            "Name": "Safety Fold",
+            "Angle": 0,
+            "Length": 0,
+            "IsOppositeDirection": false,
+            "IsLengthEditable": false,
+            "IsAngleEditable": false
+        },
+        "Segments": [
+            {
+                "Angle": 90,
+                "Length": 2,
+                "SortOrder": 0,
+                "IsSupported": true,
+                "IsLengthEditable": false,
+                "IsAngleEditable": false,
+                "MaxLength": 150,
+                "MinLength": 0
+            },
+            {
+                "Angle": 90,
+                "Length": 30,
+                "SortOrder": 1,
+                "IsSupported": false,
+                "IsLengthEditable": true,
+                "IsAngleEditable": false,
+                "MaxLength": 50,
+                "MinLength": 10
+            }
+        ],
+        "EndFoldSWIEdgeA": {
+            "SWIDefaultAngle": 0,
+            "SWIOppositeAngle": 0
+        },
+        "EndFoldSWIEdgeZ": {
+            "SWIDefaultAngle": 0,
+            "SWIOppositeAngle": 0
+        }
+    },
+    {
+        "Id": "64f1630ea86aa18e2c3fa010",
+        "Name": "K Open",
+        "Label": "K Open",
+        "FoldsCount": 1,
+        "SortOrder": 4,
+        "IsActive": true,
+        "ExtraEndFold": {
+            "Name": "Crush",
+            "Angle": 0,
+            "Length": 0,
+            "IsOppositeDirection": false,
+            "IsLengthEditable": false,
+            "IsAngleEditable": false
+        },
+        "Segments": [
+            {
+                "Angle": 135,
+                "Length": 15,
+                "SortOrder": 0,
+                "IsSupported": false,
+                "IsLengthEditable": true,
+                "IsAngleEditable": false,
+                "MaxLength": 150,
+                "MinLength": 0
+            }
+        ],
+        "EndFoldSWIEdgeA": {
+            "SWIDefaultAngle": 1,
+            "SWIOppositeAngle": 2
+        },
+        "EndFoldSWIEdgeZ": {
+            "SWIDefaultAngle": 2,
+            "SWIOppositeAngle": 1
+        }
+    },
+    {
+        "Id": "64f163bea86aa18e2c3fa5cd",
+        "Name": "K Closed",
+        "Label": "K Closed",
+        "FoldsCount": 1,
+        "SortOrder": 5,
+        "IsActive": true,
+        "ExtraEndFold": null,
+        "Segments": [
+            {
+                "Angle": 335,
+                "Length": 15,
+                "SortOrder": 0,
+                "IsSupported": false,
+                "IsLengthEditable": false,
+                "IsAngleEditable": false,
+                "MaxLength": 150,
+                "MinLength": 0
+            },
+            {
+                "Angle": 270,
+                "Length": 2,
+                "SortOrder": 1,
+                "IsSupported": true,
+                "IsLengthEditable": false,
+                "IsAngleEditable": false,
+                "MaxLength": 150,
+                "MinLength": 0
+            },
+            {
+                "Angle": 270,
+                "Length": 10,
+                "SortOrder": 2,
+                "IsSupported": false,
+                "IsLengthEditable": true,
+                "IsAngleEditable": false,
+                "MaxLength": 15,
+                "MinLength": 0
+            }
+        ],
+        "EndFoldSWIEdgeA": {
+            "SWIDefaultAngle": 0,
+            "SWIOppositeAngle": 0
+        },
+        "EndFoldSWIEdgeZ": {
+            "SWIDefaultAngle": 0,
+            "SWIOppositeAngle": 0
+        }
+    },
+    {
+        "Id": "6732cc0d8c75e41866270943",
+        "Name": "Birds Beak",
+        "Label": "BB10",
+        "FoldsCount": 2,
+        "SortOrder": 6,
+        "IsActive": true,
+        "ExtraEndFold": null,
+        "Segments": [
+            {
+                "Angle": 135,
+                "Length": 10,
+                "SortOrder": 0,
+                "IsSupported": false,
+                "IsLengthEditable": false,
+                "IsAngleEditable": false,
+                "MaxLength": 150,
+                "MinLength": 0
+            },
+            {
+                "Angle": 90,
+                "Length": 10,
+                "SortOrder": 1,
+                "IsSupported": false,
+                "IsLengthEditable": false,
+                "IsAngleEditable": false,
+                "MaxLength": 150,
+                "MinLength": 0
+            }
+        ],
+        "EndFoldSWIEdgeA": {
+            "SWIDefaultAngle": 0,
+            "SWIOppositeAngle": 0
+        },
+        "EndFoldSWIEdgeZ": {
+            "SWIDefaultAngle": 0,
+            "SWIOppositeAngle": 0
+        }
+    },
+    {
+        "Id": "6732cc5c8c75e41866270a30",
+        "Name": "Hook",
+        "Label": "Hook",
+        "FoldsCount": 1,
+        "SortOrder": 7,
+        "IsActive": true,
+        "ExtraEndFold": null,
+        "Segments": [
+            {
+                "Angle": 135,
+                "Length": 10,
+                "SortOrder": 0,
+                "IsSupported": false,
+                "IsLengthEditable": false,
+                "IsAngleEditable": false,
+                "MaxLength": 150,
+                "MinLength": 0
+            }
+        ],
+        "EndFoldSWIEdgeA": {
+            "SWIDefaultAngle": 0,
+            "SWIOppositeAngle": 0
+        },
+        "EndFoldSWIEdgeZ": {
+            "SWIDefaultAngle": 0,
+            "SWIOppositeAngle": 0
+        }
+    }
+]

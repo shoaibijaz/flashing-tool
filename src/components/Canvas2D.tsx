@@ -1,124 +1,146 @@
-import React from 'react';
+import PreviewLayer from './PreviewLayer';
+import CanvasDialogs from './dialogs/CanvasDialogs';
+import React, { useState } from 'react';
+// Layout and UI imports (all unused imports removed)
 import { Stage, Layer, Line as KonvaLine } from 'react-konva';
-import PolylineHandles from './PolylineHandles';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Point, Line } from '../types';
+import ZoomControls from './ZoomControls';
+import PolylineLayer from './PolylineLayer';
 
 interface Canvas2DProps {
   width: number;
   height: number;
-  mode: 'polyline' | 'freehand';
+  mode: 'polyline';
   lines: Line[];
   linesState: Line[];
+  setLinesState?: (lines: Line[]) => void;
   polyPoints: Point[];
   hoverPoint: Point | null;
-  freePoints: Point[];
-  drawing: boolean;
+  // drawing: boolean; // removed, not used
   onStageClickPoly: (e: KonvaEventObject<MouseEvent>) => void;
   onStageMouseMovePoly: (e: KonvaEventObject<MouseEvent>) => void;
   onStageMouseLeavePoly: () => void;
   onPointDragMove: (idx: number, e: KonvaEventObject<DragEvent>) => void;
   onFinishedLinePointDrag: (lineIdx: number, ptIdx: number, e: KonvaEventObject<DragEvent>) => void;
-  onFinishedLinePointDragEnd: (lineIdx: number, ptIdx: number, e: KonvaEventObject<DragEvent>) => void;
-  onStageMouseDownFree: (e: KonvaEventObject<MouseEvent>) => void;
-  onStageMouseMoveFree: (e: KonvaEventObject<MouseEvent>) => void;
-  onStageMouseUpFree: () => void;
   onContextMenuPoly: (e: KonvaEventObject<MouseEvent>) => void;
 }
 
-const Canvas2D: React.FC<Canvas2DProps> = ({
-  width,
-  height,
-  mode,
-  linesState,
-  polyPoints,
-  hoverPoint,
-  freePoints,
-  drawing,
-  onStageClickPoly,
-  onStageMouseMovePoly,
-  onStageMouseLeavePoly,
-  onPointDragMove,
-  onFinishedLinePointDrag,
-  onFinishedLinePointDragEnd,
-  onStageMouseDownFree,
-  onStageMouseMoveFree,
-  onStageMouseUpFree,
-  onContextMenuPoly,
-}) => (
-  <Stage
-    width={width}
-    height={height}
-    className="w-full h-auto"
-    style={{ maxWidth: '100%' }}
-    onClick={mode === 'polyline' ? onStageClickPoly : undefined}
-    onMouseMove={mode === 'polyline' ? onStageMouseMovePoly : undefined}
-    onMouseLeave={mode === 'polyline' ? onStageMouseLeavePoly : undefined}
-    onContextMenu={mode === 'polyline' ? onContextMenuPoly : undefined}
-    onMouseDown={mode === 'freehand' ? onStageMouseDownFree : undefined}
-    onMousemove={mode === 'freehand' ? onStageMouseMoveFree : undefined}
-    onMouseup={mode === 'freehand' ? onStageMouseUpFree : undefined}
-  >
-    <Layer>
-      {linesState.length > 0 && linesState.map((line, lineIdx) => (
-        line.points.length > 1 && (
-          <React.Fragment key={line.id}>
-            <KonvaLine
-              points={line.points.flatMap((p) => [p.x, p.y])}
-              stroke={line.color}
-              strokeWidth={3}
-              lineCap="round"
-              lineJoin="round"
+// --- Canvas2D main component ---
+const Canvas2D: React.FC<Canvas2DProps> = (props) => {
+  // Destructure props
+  const {
+    width,
+    height,
+    mode,
+    linesState,
+    polyPoints,
+    hoverPoint,
+    onStageClickPoly,
+    onStageMouseMovePoly,
+    onStageMouseLeavePoly,
+    onPointDragMove,
+    onFinishedLinePointDrag,
+    onContextMenuPoly,
+  } = props;
+
+  // --- Zoom state ---
+  const [zoom, setZoom] = useState(1);
+  const minZoom = 0.2;
+  const maxZoom = 3;
+  const zoomStep = 0.1;
+
+  // Optional: handle wheel zoom
+  const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+    const scaleBy = 1.05;
+    const oldZoom = zoom;
+    let newZoom = oldZoom;
+    if (e.evt.deltaY < 0) {
+      newZoom = Math.min(maxZoom, oldZoom * scaleBy);
+    } else {
+      newZoom = Math.max(minZoom, oldZoom / scaleBy);
+    }
+    setZoom(newZoom);
+  };
+
+  // --- Grid rendering ---
+  const gridSpacing = 20; // px, narrower grid
+  const gridColor = '#f3f3f3'; // very light gray
+  const gridLines: React.ReactNode[] = [];
+  for (let x = 0; x <= width; x += gridSpacing) {
+    gridLines.push(
+      <KonvaLine
+        key={`grid-x-${x}`}
+        points={[x, 0, x, height]}
+        stroke={gridColor}
+        strokeWidth={1}
+        listening={false}
+      />
+    );
+  }
+  for (let y = 0; y <= height; y += gridSpacing) {
+    gridLines.push(
+      <KonvaLine
+        key={`grid-y-${y}`}
+        points={[0, y, width, y]}
+        stroke={gridColor}
+        strokeWidth={1}
+        listening={false}
+      />
+    );
+  }
+
+  // Store label drag offsets: { [lineIdx-segIdx]: {dx, dy} }
+  const [labelOffsets, setLabelOffsets] = useState<Record<string, {dx: number, dy: number}>>({});
+  // Store angle label drag offsets: { [lineIdx-vertexIdx]: {dx: number, dy: number} }
+  const [angleLabelOffsets, setAngleLabelOffsets] = useState<Record<string, {dx: number, dy: number}>>({});
+  // Helper to get offset key
+  const getLabelKey = (lineIdx: number, segIdx: number) => `${lineIdx}-${segIdx}`;
+  const getAngleLabelKey = (lineIdx: number, vertexIdx: number) => `angle-${lineIdx}-${vertexIdx}`;
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center bg-white overflow-hidden">
+      <ZoomControls zoom={zoom} setZoom={setZoom} minZoom={minZoom} maxZoom={maxZoom} zoomStep={zoomStep} />
+      <div className="relative flex items-center justify-center w-full h-full">
+        <Stage
+          width={width}
+          height={height}
+          className="block max-w-full max-h-full"
+          style={{ background: 'white' }}
+          scaleX={zoom}
+          scaleY={zoom}
+          onWheel={handleWheel}
+          onClick={onStageClickPoly}
+          onMouseMove={onStageMouseMovePoly}
+          onMouseLeave={onStageMouseLeavePoly}
+          onContextMenu={onContextMenuPoly}
+        >
+          {/* Grid Layer: always rendered at bottom */}
+          <Layer listening={false}>{gridLines}</Layer>
+          <Layer>
+            <PolylineLayer
+              linesState={linesState}
+              mode={mode}
+              setLabelOffsets={setLabelOffsets}
+              setAngleLabelOffsets={setAngleLabelOffsets}
+              labelOffsets={labelOffsets}
+              angleLabelOffsets={angleLabelOffsets}
+              getLabelKey={getLabelKey}
+              getAngleLabelKey={getAngleLabelKey}
+              onFinishedLinePointDrag={onFinishedLinePointDrag}
             />
-            <PolylineHandles
-              points={line.points}
-              onDragMove={(ptIdx, e) => onFinishedLinePointDrag(lineIdx, ptIdx, e)}
-              draggable={mode === 'polyline'}
+            <PreviewLayer
+              polyPoints={polyPoints}
+              hoverPoint={hoverPoint}
+              onPointDragMove={onPointDragMove}
             />
-          </React.Fragment>
-        )
-      ))}
-      {/* Polyline preview */}
-      {mode === 'polyline' && polyPoints.length > 0 && (
-        <>
-          <KonvaLine
-            points={polyPoints.flatMap((p) => [p.x, p.y])}
-            stroke="#60a5fa"
-            strokeWidth={3}
-            lineCap="round"
-            lineJoin="round"
-            dash={[8, 8]}
-          />
-          {/* Hover preview line */}
-          {hoverPoint && (
-            <KonvaLine
-              points={
-                polyPoints.length > 0
-                  ? [polyPoints.slice(-1)[0].x, polyPoints.slice(-1)[0].y, hoverPoint.x, hoverPoint.y]
-                  : []
-              }
-              stroke="#60a5fa"
-              strokeWidth={2}
-              dash={[4, 4]}
-            />
-          )}
-          {polyPoints.length > 0 && (
-            <PolylineHandles points={polyPoints} onDragMove={onPointDragMove} draggable />
-          )}
-        </>
-      )}
-      {/* Preview for freehand mode */}
-      {mode === 'freehand' && freePoints.length > 1 && (
-        <KonvaLine
-          points={freePoints.flatMap((p) => [p.x, p.y])}
-          stroke="#60a5fa"
-          strokeWidth={3}
-          lineCap="round"
-          lineJoin="round"
-        />
-      )}
-    </Layer>
-  </Stage>
-);
+          </Layer>
+        </Stage>
+      </div>
+      <CanvasDialogs />
+    </div>
+  );
+};
 
 export default Canvas2D;
