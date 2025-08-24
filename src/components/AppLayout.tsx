@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import LayersPanel from './LayersPanel';
+import DrawingLabel from './DrawingLabel';
 import { Button } from "./ui/button";
 import { Undo2, Redo2, Trash2, CheckCircle2, Text, Shapes, Image, Upload, Sparkles, StretchHorizontal } from "lucide-react";
+import type { Line } from '../types';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -15,7 +17,9 @@ interface AppLayoutProps {
   onToggleTapered?: () => void;
   isTaperedCreated?: boolean;
   activeDiagram?: 'original' | 'tapered';
-  // diagramLabel?: string;
+  setActiveDiagram?: (d: 'original' | 'tapered') => void;
+  setTaperedLines?: (lines: Line[] | null) => void;
+  setIsTaperedCreated?: (v: boolean) => void;
   hasOriginalDiagram?: boolean;
 }
 
@@ -38,11 +42,13 @@ export default function AppLayout({
   onToggleTapered,
   isTaperedCreated = false,
   activeDiagram = 'original',
-  // diagramLabel,
+  setActiveDiagram,
+  setTaperedLines,
+  setIsTaperedCreated,
   hasOriginalDiagram = false,
 }: AppLayoutProps) {
   const [layersOpen, setLayersOpen] = useState(false);
-  const [layersTab, setLayersTab] = useState<'original' | 'tapered'>("original");
+  const [layersTab, setLayersTab] = useState<'original' | 'tapered' | 'endfolds'>("original");
   return (
     <div className="flex flex-col h-screen w-screen bg-background">
       {/* Top Toolbar */}
@@ -54,16 +60,38 @@ export default function AppLayout({
         <div className="flex items-center gap-2">
           {/* Tapered toggle button: only show when not in drawing mode and original diagram exists */}
           {!isDrawMode && hasOriginalDiagram && (
-            <Button
-              variant="ghost"
-              size="default"
-              onClick={onToggleTapered}
-              disabled={!isTaperedCreated && activeDiagram !== 'original'}
-              aria-label={activeDiagram === 'original' ? 'Switch to Tapered End 2' : 'Switch to Tapered End 1'}
-            >
-              <StretchHorizontal className="w-5 h-5" />
-              <span className="hidden sm:inline ml-1">{activeDiagram === 'original' ? 'Tapered End 2' : 'Tapered End 1'}</span>
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="default"
+                onClick={onToggleTapered}
+                disabled={!isTaperedCreated && activeDiagram !== 'original'}
+                aria-label={isTaperedCreated ? (activeDiagram === 'original' ? 'Switch to Tapered End 2' : 'Switch to Tapered End 1') : 'Make Tapered'}
+              >
+                <StretchHorizontal className="w-5 h-5" />
+                <span className="hidden sm:inline ml-1">
+                  {!isTaperedCreated ? 'Make Tapered' : (activeDiagram === 'original' ? 'Tapered End 2' : 'Tapered End 1')}
+                </span>
+              </Button>
+              {/* Remove Tapered button: only show when tapered is created, next to Tapered button */}
+              {isTaperedCreated && (
+                <Button
+                  variant="ghost"
+                  size="default"
+                  onClick={() => {
+                    if (activeDiagram === 'tapered' && typeof setActiveDiagram === 'function') {
+                      setActiveDiagram('original');
+                    }
+                    if (typeof setTaperedLines === 'function') setTaperedLines(null);
+                    if (typeof setIsTaperedCreated === 'function') setIsTaperedCreated(false);
+                  }}
+                  aria-label="Remove Tapered"
+                >
+                  <Trash2 className="w-5 h-5 text-red-500" />
+                  <span className="hidden sm:inline ml-1 text-red-600">Remove Tapered</span>
+                </Button>
+              )}
+            </>
           )}
           <Button variant="ghost" size="default" onClick={onUndo} aria-label="Undo">
             <Undo2 className="w-5 h-5" />
@@ -73,19 +101,34 @@ export default function AppLayout({
             <Redo2 className="w-5 h-5" />
             <span className="hidden sm:inline ml-1">Redo</span>
           </Button>
-          <Button variant="ghost" size="default" onClick={onClear} aria-label="Clear">
+          <Button
+            variant="ghost"
+            size="default"
+            onClick={() => {
+              // Clear tapered
+              if (typeof setTaperedLines === 'function') setTaperedLines(null);
+              if (typeof setIsTaperedCreated === 'function') setIsTaperedCreated(false);
+              if (typeof setActiveDiagram === 'function') setActiveDiagram('original');
+              // Clear original drawing via onClear (should reset drawing lines in store)
+              if (typeof onClear === 'function') onClear();
+            }}
+            aria-label="Clear"
+          >
             <Trash2 className="w-5 h-5" />
             <span className="hidden sm:inline ml-1">Clear</span>
           </Button>
-          <Button
-            variant="default"
-            size="default"
-            onClick={onFinish}
-            className={`ml-2 ${isDrawMode ? 'text-green-600 [&_svg]:text-green-600' : ''}`}
-          >
-            <CheckCircle2 className="w-5 h-5 mr-1" />
-            <span className="hidden sm:inline">Finish</span>
-          </Button>
+          {/* Show Finish button only in new drawing mode (isDrawMode === true) */}
+          {isDrawMode && (
+            <Button
+              variant="default"
+              size="default"
+              onClick={onFinish}
+              className="ml-2 text-green-600 [&_svg]:text-green-600"
+            >
+              <CheckCircle2 className="w-5 h-5 mr-1" />
+              <span className="hidden sm:inline">Finish</span>
+            </Button>
+          )}
           {/* Layers button after Finish */}
           <Button
             variant="ghost"
@@ -99,13 +142,17 @@ export default function AppLayout({
         </div>
       </header>
       <div className="flex flex-1 overflow-hidden relative">
+        {/* Drawing label: positioned under zoom control, always on top */}
+        <div className="absolute right-4 mt-14 z-50">
+          <DrawingLabel isTaperedCreated={isTaperedCreated} activeDiagram={activeDiagram} />
+        </div>
         {/* Layers side panel */}
         {layersOpen && (
           <LayersPanel
             activeTab={layersTab}
             onTabChange={tab => {
               if (tab === layersTab) return;
-              setLayersTab(tab);
+              setLayersTab(tab as 'original' | 'tapered' | 'endfolds');
             }}
             onClose={() => setLayersOpen(false)}
           />

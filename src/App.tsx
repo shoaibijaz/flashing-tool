@@ -28,7 +28,7 @@ function App() {
   // Zustand store hooks and state (for original only)
   const linesStore = useDrawingStore((s) => s.lines);
   const addLine = useDrawingStore((s) => s.addLine);
-  const clear = useDrawingStore((s) => s.clear);
+  const clearStore = useDrawingStore((s) => s.clear);
   const setLines = useDrawingStore((s) => s.setLines);
   const redo = useDrawingStore((s) => s.redo);
 
@@ -205,19 +205,31 @@ function App() {
     }
   }
 
+  // Clear both store and polyPoints for true reset
+  function handleClear() {
+    clearStore();
+    setOriginalLines([]);
+    setTaperedLines(null);
+    setPolyPoints([]);
+    setActiveDiagram('original');
+  }
+
   // --- Render ---
   return (
     <AppLayout
       onFinish={finishPolyline}
       onUndo={handleUndo}
       onRedo={redo}
-      onClear={clear}
+      onClear={handleClear}
       onToolSelect={setActiveTool}
       activeTool={activeTool}
       isDrawMode={polyPoints.length > 0}
       onToggleTapered={handleToggleTapered}
       isTaperedCreated={isTaperedCreated}
       activeDiagram={activeDiagram}
+      setActiveDiagram={setActiveDiagram}
+      setTaperedLines={setTaperedLines}
+      setIsTaperedCreated={setIsTaperedCreated}
       hasOriginalDiagram={originalLines.length > 0 && polyPoints.length === 0}
     >
       <div ref={containerRef} className="w-full h-full flex-1 flex items-center justify-center bg-white dark:bg-gray-900">

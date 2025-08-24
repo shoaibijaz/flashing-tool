@@ -126,9 +126,9 @@ const PolylineLayer: React.FC<PolylineLayerProps> = ({
                 key={`add-segment-handle-circle-${idx}`}
                 x={line.points[idx].x}
                 y={line.points[idx].y}
-                draggable={activeDiagram === 'original'}
+                draggable={activeDiagram === 'original' && lineIdx === 0}
                 onClick={(e) => {
-                  if (activeDiagram !== 'original') return;
+                  if (!(activeDiagram === 'original' && lineIdx === 0)) return;
                   e.evt?.stopPropagation?.();
                   e.cancelBubble = true;
                   useDialogStore.getState().openDialog('endpoint', {
@@ -139,13 +139,13 @@ const PolylineLayer: React.FC<PolylineLayerProps> = ({
                     lineIdx,
                   });
                 }}
-                onDragMove={activeDiagram === 'original' ? (e: KonvaEventObject<DragEvent>) => {
+                onDragMove={activeDiagram === 'original' && lineIdx === 0 ? (e: KonvaEventObject<DragEvent>) => {
                   onFinishedLinePointDrag(lineIdx, idx, e);
                 } : undefined}
                 onMouseEnter={(e: KonvaEventObject<MouseEvent>) => {
                   const stage = e.target.getStage();
                   if (stage && stage.container()) {
-                    stage.container().style.cursor = activeDiagram === 'original' ? 'pointer' : 'default';
+                    stage.container().style.cursor = (activeDiagram === 'original' && lineIdx === 0) ? 'pointer' : 'default';
                   }
                 }}
                 onMouseLeave={(e: KonvaEventObject<MouseEvent>) => {
@@ -173,7 +173,7 @@ const PolylineLayer: React.FC<PolylineLayerProps> = ({
               resolvedOffsets={resolvedOffsetsPerLine[lineIdx]}
               activeDiagram={activeDiagram}
             />
-            {line.points.length > 1 && activeDiagram === 'original' && (
+            {line.points.length > 1 && activeDiagram === 'original' && lineIdx === 0 && (
               <PolylineHandles
                   points={line.points.slice(1, -1)}
                 onDragMove={(ptIdx, e) => onFinishedLinePointDrag(lineIdx, ptIdx + 1, e)}
