@@ -38,7 +38,6 @@ export const useDrawing = () => {
 
     const handleStageClick = useCallback((e: KonvaEventObject<MouseEvent>) => {
         if (!activeDrawing || activeDrawing.locked || !isDrawingMode) {
-            console.log('Drawing disabled: locked or not in drawing mode');
             return;
         }
 
@@ -54,7 +53,6 @@ export const useDrawing = () => {
         const transformedPos = transform.point(pos);
 
         const newPoint: Point = { x: transformedPos.x, y: transformedPos.y };
-        console.log('Adding point:', newPoint, 'from screen pos:', pos);
 
         // Add point to polyline
         const newPolyPoints = [...polyPoints, newPoint];
@@ -78,12 +76,17 @@ export const useDrawing = () => {
             }
 
             updateDrawingLines(activeDrawing.id, newLines);
-            console.log('Line updated with', newPolyPoints.length, 'points');
         }
     }, [activeDrawing, isDrawingMode, polyPoints, settings.appearance.lineColor, updateDrawingLines]);
 
     const handleStageMouseMove = useCallback((e: KonvaEventObject<MouseEvent>) => {
         if (!activeDrawing) return;
+
+        // Only track hover point when in drawing mode
+        if (!isDrawingMode) {
+            setHoverPoint(null);
+            return;
+        }
 
         const stage = e.target.getStage();
         if (!stage) return;
@@ -97,7 +100,7 @@ export const useDrawing = () => {
 
             setHoverPoint({ x: transformedPos.x, y: transformedPos.y });
         }
-    }, [activeDrawing]);
+    }, [activeDrawing, isDrawingMode]);
 
     const handleStageMouseLeave = useCallback(() => {
         setHoverPoint(null);
@@ -123,8 +126,15 @@ export const useDrawing = () => {
         }
 
         const pos = e.target.position();
+
         // Point drag coordinates are already in the correct coordinate space
         const newLines = [...activeDrawing.lines];
+
+        if (lineIdx >= newLines.length) {
+            console.error('Line index out of bounds:', lineIdx, 'max:', newLines.length - 1);
+            return;
+        }
+
         const newPoints = [...newLines[lineIdx].points];
         newPoints[ptIdx] = { x: pos.x, y: pos.y };
         newLines[lineIdx] = { ...newLines[lineIdx], points: newPoints };
@@ -199,21 +209,15 @@ export const useDrawing = () => {
 
     const finishDrawing = useCallback(() => {
         if (isDrawingMode && polyPoints.length >= 2) {
-            console.log('Finishing current drawing');
-            console.log('Current polyPoints:', polyPoints);
-
             // Finish current polyline and switch to move mode (only with 2+ points)
-            console.log('Completing drawing with', polyPoints.length, 'points');
             // The line is already saved in the store from the last click, so we just need to reset
             setPolyPoints([]);
+            setHoverPoint(null); // Clear hover point when finishing
             setIsDrawingMode(false);
-            console.log('Drawing completed, switched to move mode');
-        } else {
-            console.log('Cannot finish drawing: need at least 2 points, current:', polyPoints.length);
         }
     }, [isDrawingMode, polyPoints]);
 
-    const handleContextMenu = useCallback((e: KonvaEventObject<PointerEvent>) => {
+    const handleContextMenu = useCallback((e: KonvaEventObject<MouseEvent>) => {
         e.evt.preventDefault();
         finishDrawing();
     }, [finishDrawing]);
@@ -221,14 +225,13 @@ export const useDrawing = () => {
     const clearDrawing = useCallback(() => {
         if (!activeDrawing) return;
 
-        console.log('Clearing current drawing');
         // Clear all lines from the current drawing
         updateDrawingLines(activeDrawing.id, []);
-        // Clear current polyline points
+        // Clear current polyline points and hover point
         setPolyPoints([]);
+        setHoverPoint(null);
         // Switch back to drawing mode
         setIsDrawingMode(true);
-        console.log('Drawing cleared, switched to drawing mode');
     }, [activeDrawing, updateDrawingLines]);
 
     const toggleLock = useCallback(() => {

@@ -49,7 +49,6 @@ function App() {
     panX,
     panY,
     handleRightClickDragStart,
-    handleRightClickDragMove,
     handleRightClickDragEnd
   } = usePan(isDrawingMode);
 
@@ -60,8 +59,21 @@ function App() {
     }
   }, [drawings, handleCreateDrawing]);
 
+  // Create active drawing line for preview
+  const activeDrawingLine = isDrawingMode && polyPoints.length >= 1 ? {
+    id: 'temp-line',
+    points: polyPoints,
+    color: activeDrawing?.lines[0]?.color || '#60a5fa'
+  } : null;
+
+  // Get all finished lines from the active drawing  
+  // During drawing mode, exclude the current line being drawn (which is the last line)
+  const finishedLines = isDrawingMode 
+    ? (activeDrawing?.lines.slice(0, -1) || []) // Exclude last line during drawing
+    : (activeDrawing?.lines || []); // Show all lines when not drawing
+
   return (
-    <div className="app-fullscreen">
+    <div className={`app-fullscreen ${isDrawingMode ? 'drawing-mode' : ''}`}>
       <Navbar 
         isDrawingMode={isDrawingMode}
         canFinishDrawing={canFinishDrawing}
@@ -75,26 +87,26 @@ function App() {
               <Canvas2D 
                 width={dimensions.width}
                 height={dimensions.height}
-                lines={activeDrawing.lines}
-                polyPoints={polyPoints}
-                hoverPoint={hoverPoint}
                 zoom={zoom}
                 panX={panX}
                 panY={panY}
+                polyPoints={polyPoints}
+                hoverPoint={hoverPoint}
                 isDrawingMode={isDrawingMode}
+                activeDrawing={activeDrawingLine}
+                drawings={finishedLines}
                 isLocked={activeDrawing.locked}
-                onStageClickPoly={handleStageClick}
-                onStageMouseMovePoly={handleStageMouseMove}
-                onStageMouseLeavePoly={handleStageMouseLeave}
-                onPointDragMove={handlePointDrag}
+                onStageClick={handleStageClick}
+                onStageMouseMove={handleStageMouseMove}
+                onStageMouseLeave={handleStageMouseLeave}
+                onStageWheel={handleWheel}
+                onStageMouseDown={handleRightClickDragStart}
+                onStageMouseUp={handleRightClickDragEnd}
+                onContextMenu={handleContextMenu}
+                onPointDrag={handlePointDrag}
                 onFinishedLinePointDrag={handleFinishedLinePointDrag}
                 onLabelDragMove={handleLabelDragMove}
                 onAngleLabelDragMove={handleAngleLabelDragMove}
-                onContextMenuPoly={handleContextMenu}
-                onWheel={handleWheel}
-                onRightClickDragStart={handleRightClickDragStart}
-                onRightClickDragMove={handleRightClickDragMove}
-                onRightClickDragEnd={handleRightClickDragEnd}
               />
             </div>
             <ZoomControls
