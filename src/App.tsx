@@ -93,7 +93,6 @@ function App() {
                 polyPoints={polyPoints}
                 hoverPoint={hoverPoint}
                 isDrawingMode={isDrawingMode}
-                activeDrawing={activeDrawingLine}
                 drawings={finishedLines}
                 isLocked={activeDrawing.locked}
                 onStageClick={handleStageClick}
@@ -105,8 +104,6 @@ function App() {
                 onContextMenu={handleContextMenu}
                 onPointDrag={handlePointDrag}
                 onFinishedLinePointDrag={handleFinishedLinePointDrag}
-                onLabelDragMove={handleLabelDragMove}
-                onAngleLabelDragMove={handleAngleLabelDragMove}
               />
             </div>
             <ZoomControls

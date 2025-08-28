@@ -39,6 +39,7 @@ const defaultSettings: AppSettings = {
 
 interface SettingsState {
     settings: AppSettings;
+    isHydrated: boolean;
 
     // Actions
     updateAppearance: (updates: Partial<AppSettings['appearance']>) => void;
@@ -55,6 +56,7 @@ export const useSettingsStore = create<SettingsState>()(
     persist(
         (set, get) => ({
             settings: defaultSettings,
+            isHydrated: false,
 
             updateAppearance: (updates) => {
                 set((state) => ({
@@ -125,12 +127,23 @@ export const useSettingsStore = create<SettingsState>()(
             migrate: (persistedState: unknown, version: number) => {
                 if (version === 0) {
                     // Migration from version 0 to 1
-                    return { settings: defaultSettings };
+                    return { settings: defaultSettings, isHydrated: true };
                 }
                 return persistedState as SettingsState;
             },
+            onRehydrateStorage: () => (state) => {
+                // Set hydrated flag when rehydration completes
+                if (state) {
+                    state.isHydrated = true;
+                }
+            },
+            // Immediately set hydrated for new users (no persisted state)
+            partialize: (state) => ({ settings: state.settings }),
         }
     )
 );
+
+// Immediately mark as hydrated for initial state
+useSettingsStore.setState({ isHydrated: true });
 
 export default useSettingsStore;
