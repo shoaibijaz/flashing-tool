@@ -1,0 +1,59 @@
+/* App.css - Full-screen canvas layout for Flashing Creator */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+/* Prevent scrollbars */
+html, body {
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Root app container */
+.app-fullscreen {
+  height: 100%;
+  width: 100%;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+}
+
+/* Canvas container below navbar fills remaining space */
+.app-fullscreen > div:last-child {
+  width: 100%;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  background-color: #f8fafc;
+  color: #64748b;
+  font-size: 1.2rem;
+}
+
+/* Ensure the canvas takes full space */
+.app-fullscreen canvas {
+  display: block;
+  cursor: crosshair;
+}
+
+/* Prevent accidental text selection during draw */
+.app-fullscreen * {
+  user-select: none;
+}

@@ -1,31 +1,43 @@
 import React from 'react';
+import { ZoomIn, ZoomOut } from 'lucide-react';
 
 interface ZoomControlsProps {
   zoom: number;
-  setZoom: (z: number) => void;
-  minZoom: number;
-  maxZoom: number;
-  zoomStep: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
 }
 
-const ZoomControls: React.FC<ZoomControlsProps> = ({ zoom, setZoom, minZoom, maxZoom, zoomStep }) => (
-  <div className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-white/80 dark:bg-neutral-800/80 rounded shadow px-2 py-1">
-    <button
-      className="px-2 py-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-lg font-bold"
-      onClick={() => setZoom(Math.max(minZoom, +(zoom - zoomStep).toFixed(2)))}
-      aria-label="Zoom out"
-    >
-      -
-    </button>
-    <span className="text-xs w-12 text-center select-none">{Math.round(zoom * 100)}%</span>
-    <button
-      className="px-2 py-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-lg font-bold"
-      onClick={() => setZoom(Math.min(maxZoom, +(zoom + zoomStep).toFixed(2)))}
-      aria-label="Zoom in"
-    >
-      +
-    </button>
-  </div>
-);
+const ZoomControls: React.FC<ZoomControlsProps> = ({
+  zoom,
+  onZoomIn,
+  onZoomOut,
+}) => {
+  return (
+    <div className="absolute bottom-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex flex-col gap-1 z-20">
+      {/* Zoom In */}
+      <button
+        onClick={onZoomIn}
+        className="p-2 hover:bg-gray-100 rounded transition-colors"
+        title="Zoom In"
+      >
+        <ZoomIn size={18} className="text-gray-700" />
+      </button>
+      
+      {/* Zoom Level Display */}
+      <div className="px-2 py-1 text-xs text-gray-600 text-center min-w-[60px]">
+        {Math.round(zoom * 100)}%
+      </div>
+      
+      {/* Zoom Out */}
+      <button
+        onClick={onZoomOut}
+        className="p-2 hover:bg-gray-100 rounded transition-colors"
+        title="Zoom Out"
+      >
+        <ZoomOut size={18} className="text-gray-700" />
+      </button>
+    </div>
+  );
+};
 
 export default ZoomControls;
