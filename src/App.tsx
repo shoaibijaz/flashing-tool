@@ -6,12 +6,9 @@ import CanvasToolbar from './components/CanvasToolbar';
 import { useDrawing } from './hooks/useDrawing';
 import { useZoom } from './hooks/useZoom';
 import { usePan } from './hooks/usePan';
-import { useCanvasDimensions } from './hooks/useCanvasDimensions';
 import './App.css';
 
 function App() {
-  const { dimensions, containerRef } = useCanvasDimensions();
-  
   const {
     // State
     polyPoints,
@@ -19,7 +16,7 @@ function App() {
     isDrawingMode,
     activeDrawing,
     drawings,
-    
+
     // Handlers
     handleCreateDrawing,
     handleStageClick,
@@ -27,13 +24,11 @@ function App() {
     handleStageMouseLeave,
     handlePointDrag,
     handleFinishedLinePointDrag,
-    handleLabelDragMove,
-    handleAngleLabelDragMove,
     handleContextMenu,
     finishDrawing,
     clearDrawing,
     toggleLock,
-    
+
     // Computed
     canFinishDrawing
   } = useDrawing();
@@ -59,53 +54,61 @@ function App() {
     }
   }, [drawings, handleCreateDrawing]);
 
-  // Create active drawing line for preview
-  const activeDrawingLine = isDrawingMode && polyPoints.length >= 1 ? {
-    id: 'temp-line',
-    points: polyPoints,
-    color: activeDrawing?.lines[0]?.color || '#60a5fa'
-  } : null;
-
   // Get all finished lines from the active drawing  
   // During drawing mode, exclude the current line being drawn (which is the last line)
-  const finishedLines = isDrawingMode 
+  const finishedLines = isDrawingMode
     ? (activeDrawing?.lines.slice(0, -1) || []) // Exclude last line during drawing
     : (activeDrawing?.lines || []); // Show all lines when not drawing
 
   return (
     <div className={`app-fullscreen ${isDrawingMode ? 'drawing-mode' : ''}`}>
-      <Navbar 
+      <Navbar
         isDrawingMode={isDrawingMode}
         canFinishDrawing={canFinishDrawing}
         onFinishDrawing={finishDrawing}
         onClearDrawing={clearDrawing}
       />
-      <div ref={containerRef} className="flex-1 relative w-full" style={{ height: 'calc(100vh - 48px)' }}>
+      <div
+        style={{
+          flex: 1,
+          width: '100%',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+        className="bg-white dark:bg-gray-900"
+        id="canvas-container"
+      >
         {activeDrawing ? (
           <>
-            <div className="absolute inset-0 w-full h-full">
-              <Canvas2D 
-                width={dimensions.width}
-                height={dimensions.height}
-                zoom={zoom}
-                panX={panX}
-                panY={panY}
-                polyPoints={polyPoints}
-                hoverPoint={hoverPoint}
-                isDrawingMode={isDrawingMode}
-                drawings={finishedLines}
-                isLocked={activeDrawing.locked}
-                onStageClick={handleStageClick}
-                onStageMouseMove={handleStageMouseMove}
-                onStageMouseLeave={handleStageMouseLeave}
-                onStageWheel={handleWheel}
-                onStageMouseDown={handleRightClickDragStart}
-                onStageMouseUp={handleRightClickDragEnd}
-                onContextMenu={handleContextMenu}
-                onPointDrag={handlePointDrag}
-                onFinishedLinePointDrag={handleFinishedLinePointDrag}
-              />
-            </div>
+            <Canvas2D
+              zoom={zoom}
+              panX={panX}
+              panY={panY}
+              polyPoints={polyPoints}
+              hoverPoint={hoverPoint}
+              isDrawingMode={isDrawingMode}
+              drawings={finishedLines}
+              isLocked={activeDrawing.locked}
+              onStageClick={handleStageClick}
+              onStageMouseMove={handleStageMouseMove}
+              onStageMouseLeave={handleStageMouseLeave}
+              onStageWheel={handleWheel}
+              onStageMouseDown={handleRightClickDragStart}
+              onStageMouseUp={handleRightClickDragEnd}
+              onContextMenu={handleContextMenu}
+              onPointDrag={handlePointDrag}
+              onFinishedLinePointDrag={handleFinishedLinePointDrag}
+            />
+          </>
+        ) : (
+          <div className="loading">
+            <p>Initializing canvas...</p>
+          </div>
+        )}
+
+        {/* Fixed positioned controls outside the canvas container */}
+        {activeDrawing && (
+          <>
             <ZoomControls
               zoom={zoom}
               onZoomIn={handleZoomIn}
@@ -116,10 +119,6 @@ function App() {
               onLockClick={toggleLock}
             />
           </>
-        ) : (
-          <div className="loading">
-            <p>Initializing canvas...</p>
-          </div>
         )}
       </div>
     </div>

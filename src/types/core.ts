@@ -83,6 +83,11 @@ export interface CanvasSettings {
     showLengths: boolean;
     showLengthBubbles: boolean;
     showAngles: boolean;
+    // Background image settings
+    showBackgroundImage: boolean;
+    backgroundImageUrl: string;
+    backgroundImageOpacity: number;
+    backgroundImageFit: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
 }
 
 export interface AppSettings {

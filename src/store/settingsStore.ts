@@ -34,6 +34,11 @@ const defaultSettings: AppSettings = {
         showLengths: true,
         showLengthBubbles: true,
         showAngles: true,
+        // Background image settings
+        showBackgroundImage: false,
+        backgroundImageUrl: '/test-background.svg', // Default test image
+        backgroundImageOpacity: 0.3,
+        backgroundImageFit: 'contain',
     },
 };
 

@@ -27,6 +27,19 @@ This is a modern web app for creating 2D/3D roof flashings. Built with React, Vi
    npm run dev
    ```
 
+## Features
+
+### Grid and Background Image
+- **Grid**: Configurable grid overlay with adjustable size and opacity
+- **Background Image**: Support for background images with multiple fit modes (contain, cover, fill, etc.)
+- **CSS-based Rendering**: Both grid and background use CSS for optimal performance and cross-browser compatibility
+- **Toggle Controls**: Easy on/off toggles in the canvas toolbar
+
+### Canvas Controls
+- Grid toggle button (blue when active)
+- Background image toggle button (green when active) 
+- Lock/unlock drawing functionality
+
 ## Project Goals
 
 See `../chat_copilot.txt` for the full project summary and goals.
