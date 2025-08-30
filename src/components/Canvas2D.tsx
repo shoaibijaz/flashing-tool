@@ -6,6 +6,7 @@ import type { Stage as StageType } from 'konva/lib/Stage';
 import type { Line as LineType, Point } from '../types/core';
 import { FinishedLines, DrawingPreview } from './canvas';
 import { useSettingsStore } from '../store/settingsStore';
+import useTaperedStore from '../store/taperedStore';
 
 export interface Canvas2DProps {
     zoom: number;
@@ -57,6 +58,9 @@ const Canvas2D: React.FC<Canvas2DProps> = ({
     // Force re-render on mount to ensure proper sizing
     const [isReady, setIsReady] = useState(false);
 
+    // Get tapered state from store
+    const { activeTaperedDiagram, canvasMode } = useTaperedStore();
+
     // Example: Set Konva Layer z-index after mount
     useEffect(() => {
         if (layerRef.current) {
@@ -70,6 +74,22 @@ const Canvas2D: React.FC<Canvas2DProps> = ({
     // Get settings from store
     const { settings } = useSettingsStore();
     const { canvas } = settings;
+
+    // Get drawings to display based on mode
+    const getDisplayDrawings = (): LineType[] => {
+        if (canvasMode === 'tapered' && activeTaperedDiagram) {
+            // Return tapered diagram as a LineType for canvas rendering
+            return [{
+                id: activeTaperedDiagram.id,
+                points: activeTaperedDiagram.points,
+                color: '#2563eb', // Blue color for tapered diagram
+                metadata: { isTapered: true }
+            }];
+        }
+        return drawings;
+    };
+
+    const displayDrawings = getDisplayDrawings();
 
     // Canvas dimensions based on actual container size
     const [dimensions, setDimensions] = useState({
@@ -195,8 +215,14 @@ const Canvas2D: React.FC<Canvas2DProps> = ({
                 position: 'relative',
                 zIndex: 1,
             }}
-            className="bg-white dark:bg-gray-900"
+            className={`bg-white dark:bg-gray-900 ${canvasMode === 'tapered' ? 'border-2 border-blue-300' : ''}`}
         >
+            {/* Mode Indicator */}
+            {canvasMode === 'tapered' && (
+                <div className="absolute top-2 left-2 bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium z-10">
+                    Tapered Mode - Angles Preserved
+                </div>
+            )}
 
 
             {/* CSS Background Image */}
@@ -224,7 +250,7 @@ const Canvas2D: React.FC<Canvas2DProps> = ({
                 <Layer ref={layerRef}>
                     {/* Finished lines */}
                     <FinishedLines
-                        drawings={drawings}
+                        drawings={displayDrawings}
                         isLocked={isLocked}
                         onFinishedLinePointDrag={onFinishedLinePointDrag}
                         onLabelDragMove={onLabelDragMove}

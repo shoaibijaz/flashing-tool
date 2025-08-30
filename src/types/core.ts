@@ -121,3 +121,25 @@ export interface GeometryInfo {
     segments: SegmentData[];
     angles: AngleData[];
 }
+
+// Tapered diagram types
+export interface TaperedSegment {
+    originalLength: number;
+    taperedLength: number;
+    angle: number; // Preserved from original - readonly
+    startPoint: Point;
+    endPoint: Point;
+}
+
+export interface TaperedDiagram {
+    id: string;
+    name: string;
+    originalDrawingId: DrawingId;
+    segments: TaperedSegment[];
+    points: Point[];
+    createdAt: Date;
+    modifiedAt: Date;
+}
+
+// Canvas mode type
+export type CanvasMode = 'original' | 'tapered';

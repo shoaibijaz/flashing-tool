@@ -3,9 +3,11 @@ import Canvas2D from './components/Canvas2D';
 import Navbar from './components/Navbar';
 import ZoomControls from './components/ZoomControls';
 import CanvasToolbar from './components/CanvasToolbar';
+import TaperedLengthPanel from './components/TaperedLengthPanel';
 import { useDrawing } from './hooks/useDrawing';
 import { useZoom } from './hooks/useZoom';
 import { usePan } from './hooks/usePan';
+import useTaperedStore from './store/taperedStore';
 import './App.css';
 
 function App() {
@@ -47,6 +49,9 @@ function App() {
     handleRightClickDragEnd
   } = usePan(isDrawingMode);
 
+  // Get tapered store state
+  const { clearTaperedDiagram } = useTaperedStore();
+
   // Initialize with default drawing if none exists
   useEffect(() => {
     if (Object.keys(drawings).length === 0) {
@@ -60,13 +65,24 @@ function App() {
     ? (activeDrawing?.lines.slice(0, -1) || []) // Exclude last line during drawing
     : (activeDrawing?.lines || []); // Show all lines when not drawing
 
+  // Check if there's a finished drawing (for tapered creation)
+  const hasFinishedDrawing = !isDrawingMode && (activeDrawing?.lines?.length ?? 0) > 0;
+
+  // Enhanced clear function that also clears tapered diagrams
+  const handleClearAll = () => {
+    clearTaperedDiagram();
+    clearDrawing();
+  };
+
   return (
     <div className={`app-fullscreen ${isDrawingMode ? 'drawing-mode' : ''}`}>
       <Navbar
         isDrawingMode={isDrawingMode}
         canFinishDrawing={canFinishDrawing}
         onFinishDrawing={finishDrawing}
-        onClearDrawing={clearDrawing}
+        onClearDrawing={handleClearAll}
+        hasFinishedDrawing={hasFinishedDrawing}
+        currentDrawing={activeDrawing || undefined}
       />
       <div
         style={{
@@ -120,6 +136,9 @@ function App() {
             />
           </>
         )}
+
+        {/* Tapered Length Panel */}
+        <TaperedLengthPanel />
       </div>
     </div>
   );
