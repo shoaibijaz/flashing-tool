@@ -1,5 +1,7 @@
 import React from 'react';
 import { ZoomIn, ZoomOut } from 'lucide-react';
+import { Box, Button } from '@radix-ui/themes';
+import * as Tooltip from '@radix-ui/react-tooltip';
 
 interface ZoomControlsProps {
   zoom: number;
@@ -13,30 +15,43 @@ const ZoomControls: React.FC<ZoomControlsProps> = ({
   onZoomOut,
 }) => {
   return (
-    <div className="absolute bottom-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex flex-col gap-1 z-20">
-      {/* Zoom In */}
-      <button
-        onClick={onZoomIn}
-        className="p-2 hover:bg-gray-100 rounded transition-colors"
-        title="Zoom In"
-      >
-        <ZoomIn size={18} className="text-gray-700" />
-      </button>
-      
-      {/* Zoom Level Display */}
-      <div className="px-2 py-1 text-xs text-gray-600 text-center min-w-[60px]">
+    <Box className="absolute bottom-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-2 flex flex-row items-center gap-2 z-20">
+      <Tooltip.Root delayDuration={200}>
+        <Tooltip.Trigger asChild>
+          <Button
+            onClick={onZoomOut}
+            color="gray"
+            variant="soft"
+            className="p-2 rounded cursor-pointer"
+            size="2"
+          >
+            <ZoomOut size={20} />
+          </Button>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content side="top" className="radix-tooltip z-50 bg-gray-900 text-white px-3 py-2 rounded shadow-md text-xs font-medium">Zoom Out</Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+      <Box className="px-2 py-1 text-sm font-medium text-gray-700 bg-gray-50 rounded min-w-[56px] text-center select-none">
         {Math.round(zoom * 100)}%
-      </div>
-      
-      {/* Zoom Out */}
-      <button
-        onClick={onZoomOut}
-        className="p-2 hover:bg-gray-100 rounded transition-colors"
-        title="Zoom Out"
-      >
-        <ZoomOut size={18} className="text-gray-700" />
-      </button>
-    </div>
+      </Box>
+      <Tooltip.Root delayDuration={200}>
+        <Tooltip.Trigger asChild>
+          <Button
+            onClick={onZoomIn}
+            color="gray"
+            variant="soft"
+            className="p-2 rounded cursor-pointer"
+            size="2"
+          >
+            <ZoomIn size={20} />
+          </Button>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content side="top" className="radix-tooltip z-50 bg-gray-900 text-white px-3 py-2 rounded shadow-md text-xs font-medium">Zoom In</Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Box>
   );
 };
 

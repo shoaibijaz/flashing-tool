@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
+import { Box } from '@radix-ui/themes';
 import Canvas2D from './components/Canvas2D';
 import Navbar from './components/Navbar';
 import ZoomControls from './components/ZoomControls';
 import CanvasToolbar from './components/CanvasToolbar';
-import TaperedLengthPanel from './components/TaperedLengthPanel';
 import { useDrawing } from './hooks/useDrawing';
 import { useZoom } from './hooks/useZoom';
 import { usePan } from './hooks/usePan';
@@ -75,7 +75,7 @@ function App() {
   };
 
   return (
-    <div className={`app-fullscreen ${isDrawingMode ? 'drawing-mode' : ''}`}>
+    <Box className={`app-fullscreen ${isDrawingMode ? 'drawing-mode' : ''}`}> 
       <Navbar
         isDrawingMode={isDrawingMode}
         canFinishDrawing={canFinishDrawing}
@@ -84,7 +84,7 @@ function App() {
         hasFinishedDrawing={hasFinishedDrawing}
         currentDrawing={activeDrawing || undefined}
       />
-      <div
+      <Box
         style={{
           flex: 1,
           width: '100%',
@@ -117,9 +117,9 @@ function App() {
             />
           </>
         ) : (
-          <div className="loading">
+          <Box className="loading">
             <p>Initializing canvas...</p>
-          </div>
+          </Box>
         )}
 
         {/* Fixed positioned controls outside the canvas container */}
@@ -137,10 +137,8 @@ function App() {
           </>
         )}
 
-        {/* Tapered Length Panel */}
-        <TaperedLengthPanel />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
 

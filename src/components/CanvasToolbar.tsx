@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, LockOpen, Image, Grid, Settings } from 'lucide-react';
+import { IconButton } from '@radix-ui/themes';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import { useSettingsStore } from '../store/settingsStore';
 import BackgroundSettingsPanel from './BackgroundSettingsPanel';
 
@@ -32,57 +34,81 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         onClose={() => setShowSettings(false)}
       />
 
-      <div className="absolute top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-1 flex flex-col gap-1 z-20 pointer-events-auto">
+      <div className="absolute top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex flex-col gap-2 z-20 pointer-events-auto">
         {/* Settings Button */}
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className={`p-2 rounded transition-colors ${showSettings
-              ? 'bg-purple-100 hover:bg-purple-200 text-purple-700'
-              : 'hover:bg-gray-100 text-gray-700'
-            }`}
-          title="Background Settings"
-        >
-          <Settings size={18} />
-        </button>
+        <Tooltip.Root delayDuration={200}>
+          <Tooltip.Trigger asChild>
+            <IconButton
+              onClick={() => setShowSettings(!showSettings)}
+              color={showSettings ? 'purple' : 'gray'}
+              variant="soft"
+              size="2"
+              aria-label="Background Settings"
+            >
+              <Settings size={24} />
+            </IconButton>
+          </Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content side="left" className="radix-tooltip z-50 bg-gray-900 text-white px-3 py-2 rounded shadow-md text-xs font-medium">Background Settings</Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
         {/* Grid Toggle Button */}
-        <button
-          onClick={handleGridToggle}
-          className={`p-2 rounded transition-colors ${canvas.showGrid
-            ? 'bg-blue-100 hover:bg-blue-200 text-blue-700'
-            : 'hover:bg-gray-100 text-gray-400'
-            }`}
-          title={canvas.showGrid ? "Hide Grid" : "Show Grid"}
-        >
-          <Grid size={18} />
-        </button>
+        <Tooltip.Root delayDuration={200}>
+          <Tooltip.Trigger asChild>
+            <IconButton
+              onClick={handleGridToggle}
+              color={canvas.showGrid ? 'blue' : 'gray'}
+              variant="soft"
+              size="2"
+              aria-label={canvas.showGrid ? 'Hide Grid' : 'Show Grid'}
+            >
+              <Grid size={24} />
+            </IconButton>
+          </Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content side="left" className="radix-tooltip z-50 bg-gray-900 text-white px-3 py-2 rounded shadow-md text-xs font-medium">{canvas.showGrid ? 'Hide Grid' : 'Show Grid'}</Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
 
         {/* Background Image Toggle Button */}
-        <button
-          onClick={handleBackgroundImageToggle}
-          className={`p-2 rounded transition-colors ${canvas.showBackgroundImage
-            ? 'bg-green-100 hover:bg-green-200 text-green-700'
-            : 'hover:bg-gray-100 text-gray-400'
-            }`}
-          title={canvas.showBackgroundImage ? "Hide Background Image" : "Show Background Image"}
-        >
-          <Image size={18} />
-        </button>
+        <Tooltip.Root delayDuration={200}>
+          <Tooltip.Trigger asChild>
+            <IconButton
+              onClick={handleBackgroundImageToggle}
+              color={canvas.showBackgroundImage ? 'green' : 'gray'}
+              variant="soft"
+              size="2"
+              aria-label={canvas.showBackgroundImage ? 'Hide Background Image' : 'Show Background Image'}
+            >
+              <Image size={24} />
+            </IconButton>
+          </Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content side="left" className="radix-tooltip z-50 bg-gray-900 text-white px-3 py-2 rounded shadow-md text-xs font-medium">{canvas.showBackgroundImage ? 'Hide Background Image' : 'Show Background Image'}</Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
 
         {/* Lock Button */}
-        <button
-          onClick={onLockClick}
-          className={`p-2 rounded transition-colors ${isLocked
-            ? 'bg-red-100 hover:bg-red-200 text-red-700'
-            : 'hover:bg-gray-100 text-gray-700'
-            }`}
-          title={isLocked ? "Unlock Drawing" : "Lock Drawing"}
-        >
-          {isLocked ? (
-            <Lock size={18} className="text-red-700" />
-          ) : (
-            <LockOpen size={18} className="text-gray-700" />
-          )}
-        </button>
+        <Tooltip.Root delayDuration={200}>
+          <Tooltip.Trigger asChild>
+            <IconButton
+              onClick={onLockClick}
+              color={isLocked ? 'red' : 'gray'}
+              variant="soft"
+              size="2"
+              aria-label={isLocked ? 'Unlock Drawing' : 'Lock Drawing'}
+            >
+              {isLocked ? (
+                <Lock size={24} className="text-red-700" />
+              ) : (
+                <LockOpen size={24} className="text-gray-700" />
+              )}
+            </IconButton>
+          </Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content side="left" className="radix-tooltip z-50 bg-gray-900 text-white px-3 py-2 rounded shadow-md text-xs font-medium">{isLocked ? 'Unlock Drawing' : 'Lock Drawing'}</Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
       </div>
     </>
   );

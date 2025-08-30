@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useSettingsStore } from '../store/settingsStore';
 
@@ -31,9 +32,10 @@ const BackgroundSettingsPanel: React.FC<BackgroundSettingsPanelProps> = ({
     ];
 
     if (!isOpen) return null;
+    return null;
 
-    return (
-        <div className="absolute top-4 left-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-30 min-w-64">
+    return createPortal(
+        <div className="absolute top-4 left-4 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-30 min-w-[220px] max-w-xs">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-700">Background Settings</h3>
                 <button
@@ -158,7 +160,8 @@ const BackgroundSettingsPanel: React.FC<BackgroundSettingsPanelProps> = ({
                     />
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

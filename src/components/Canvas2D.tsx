@@ -217,13 +217,6 @@ const Canvas2D: React.FC<Canvas2DProps> = ({
             }}
             className={`bg-white dark:bg-gray-900 ${canvasMode === 'tapered' ? 'border-2 border-blue-300' : ''}`}
         >
-            {/* Mode Indicator */}
-            {canvasMode === 'tapered' && (
-                <div className="absolute top-2 left-2 bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium z-10">
-                    Tapered Mode - Angles Preserved
-                </div>
-            )}
-
 
             {/* CSS Background Image */}
             <div style={backgroundImageStyle} />
