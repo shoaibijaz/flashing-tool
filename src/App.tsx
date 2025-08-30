@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { Box } from '@radix-ui/themes';
 import Canvas2D from './components/Canvas2D';
 import Navbar from './components/Navbar';
@@ -8,6 +8,7 @@ import { useDrawing } from './hooks/useDrawing';
 import { useZoom } from './hooks/useZoom';
 import { usePan } from './hooks/usePan';
 import useTaperedStore from './store/taperedStore';
+import type { KonvaEventObject } from 'konva/lib/Node';
 import './App.css';
 
 function App() {
@@ -45,12 +46,22 @@ function App() {
   const {
     panX,
     panY,
+    isPanning,
     handleRightClickDragStart,
+    handleRightClickDragMove,
     handleRightClickDragEnd
   } = usePan(isDrawingMode);
 
   // Get tapered store state
   const { clearTaperedDiagram } = useTaperedStore();
+
+  // Combined mouse move handler for both pan and drawing
+  const handleCombinedMouseMove = useCallback((e: KonvaEventObject<MouseEvent>) => {
+    // Handle pan drag movement first
+    handleRightClickDragMove(e);
+    // Then handle drawing hover
+    handleStageMouseMove(e);
+  }, [handleRightClickDragMove, handleStageMouseMove]);
 
   // Initialize with default drawing if none exists
   useEffect(() => {
@@ -105,8 +116,9 @@ function App() {
               isDrawingMode={isDrawingMode}
               drawings={finishedLines}
               isLocked={activeDrawing.locked}
+              isPanning={isPanning}
               onStageClick={handleStageClick}
-              onStageMouseMove={handleStageMouseMove}
+              onStageMouseMove={handleCombinedMouseMove}
               onStageMouseLeave={handleStageMouseLeave}
               onStageWheel={handleWheel}
               onStageMouseDown={handleRightClickDragStart}

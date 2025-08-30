@@ -6,13 +6,19 @@ import type { KonvaEventObject } from 'konva/lib/Node';
 export const usePan = (isDrawingMode: boolean) => {
     const { settings, updateCanvas } = useSettingsStore();
 
-    // Right-click drag for move mode
+    // Pan drag for both right-click and Ctrl+left-click in move mode
     const [dragStartPosition, setDragStartPosition] = useState<Point | null>(null);
     const [initialPan, setInitialPan] = useState<Point | null>(null);
+    const [isPanning, setIsPanning] = useState(false);
 
     const handleRightClickDragStart = useCallback((e: KonvaEventObject<MouseEvent>) => {
-        if (isDrawingMode) return;
-        console.log('Started right-click dragging drawing');
+        // Handle right-click OR Ctrl+left-click for panning
+        const isRightClick = e.evt.button === 2;
+        const isCtrlLeftClick = e.evt.button === 0 && (e.evt.ctrlKey || e.evt.metaKey);
+        
+        if (isDrawingMode || (!isRightClick && !isCtrlLeftClick)) return;
+        
+        console.log('Started pan dragging:', isRightClick ? 'right-click' : 'Ctrl+left-click');
 
         const stage = e.target.getStage();
         if (!stage) return;
@@ -21,6 +27,7 @@ export const usePan = (isDrawingMode: boolean) => {
         if (pos) {
             setDragStartPosition(pos);
             setInitialPan({ x: settings.canvas.panX, y: settings.canvas.panY });
+            setIsPanning(true);
         }
     }, [isDrawingMode, settings.canvas.panX, settings.canvas.panY]);
 
@@ -43,15 +50,17 @@ export const usePan = (isDrawingMode: boolean) => {
     }, [isDrawingMode, dragStartPosition, initialPan, updateCanvas]);
 
     const handleRightClickDragEnd = useCallback(() => {
-        if (isDrawingMode) return;
-        console.log('Finished right-click dragging drawing');
+        if (isDrawingMode || !dragStartPosition) return;
+        console.log('Finished pan dragging');
         setDragStartPosition(null);
         setInitialPan(null);
-    }, [isDrawingMode]);
+        setIsPanning(false);
+    }, [isDrawingMode, dragStartPosition]);
 
     return {
         panX: settings.canvas.panX,
         panY: settings.canvas.panY,
+        isPanning,
         handleRightClickDragStart,
         handleRightClickDragMove,
         handleRightClickDragEnd

@@ -17,6 +17,7 @@ export interface Canvas2DProps {
     isDrawingMode: boolean;
     drawings: LineType[];
     isLocked: boolean;
+    isPanning?: boolean;
     onStageClick: (e: KonvaEventObject<MouseEvent>) => void;
     onStageMouseMove: (e: KonvaEventObject<MouseEvent>) => void;
     onStageMouseLeave: () => void;
@@ -39,6 +40,7 @@ const Canvas2D: React.FC<Canvas2DProps> = ({
     isDrawingMode,
     drawings,
     isLocked,
+    isPanning = false,
     onStageClick,
     onStageMouseMove,
     onStageMouseLeave,
@@ -227,6 +229,7 @@ const Canvas2D: React.FC<Canvas2DProps> = ({
                 ref={stageRef}
                 width={dimensions.width}
                 height={dimensions.height}
+                className={isPanning ? 'panning' : ''}
                 scaleX={zoom}
                 scaleY={zoom}
                 x={panX}

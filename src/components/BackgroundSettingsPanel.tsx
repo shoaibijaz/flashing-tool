@@ -32,7 +32,6 @@ const BackgroundSettingsPanel: React.FC<BackgroundSettingsPanelProps> = ({
     ];
 
     if (!isOpen) return null;
-    return null;
 
     return createPortal(
         <div className="absolute top-4 left-4 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-30 min-w-[220px] max-w-xs">

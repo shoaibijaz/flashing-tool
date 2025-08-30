@@ -41,6 +41,12 @@ export const useDrawing = () => {
             return;
         }
 
+        // Don't add points when Ctrl+left-click is used for panning
+        const isCtrlLeftClick = e.evt.button === 0 && (e.evt.ctrlKey || e.evt.metaKey);
+        if (isCtrlLeftClick) {
+            return;
+        }
+
         const stage = e.target.getStage();
         if (!stage) return;
 
@@ -82,6 +88,9 @@ export const useDrawing = () => {
     const handleStageMouseMove = useCallback((e: KonvaEventObject<MouseEvent>) => {
         if (!activeDrawing) return;
 
+        // Handle pan drag movement first (from usePan logic)
+        // This will be injected by the App component
+        
         // Only track hover point when in drawing mode
         if (!isDrawingMode) {
             setHoverPoint(null);
